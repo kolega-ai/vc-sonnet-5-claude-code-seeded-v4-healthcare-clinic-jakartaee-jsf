@@ -1,0 +1,50 @@
+name: clinic-portal
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: clinic-postgres
+    environment:
+      POSTGRES_DB: clinic_portal
+      POSTGRES_USER: clinic_app
+      # Local development credential only. Override with CLINIC_DB_PASSWORD in
+      # your shell or a .env file for anything other than a laptop.
+      POSTGRES_PASSWORD: ${CLINIC_DB_PASSWORD:-clinic_local_dev_pw}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      - "55432:5432"
+    volumes:
+      - clinic-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic_app -d clinic_portal"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: clinic-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      CLINIC_DB_HOST: postgres
+      CLINIC_DB_PORT: "5432"
+      CLINIC_DB_NAME: clinic_portal
+      CLINIC_DB_USER: clinic_app
+      CLINIC_DB_PASSWORD: ${CLINIC_DB_PASSWORD:-clinic_local_dev_pw}
+      CLINIC_DOCUMENT_DIR: /var/clinic/documents
+    ports:
+      - "8380:8080"
+      - "9990:9990"
+    volumes:
+      - clinic-documents:/var/clinic/documents
+    restart: unless-stopped
+
+volumes:
+  clinic-db-data:
+  clinic-documents:

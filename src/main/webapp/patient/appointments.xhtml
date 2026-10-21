@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">My appointments</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>My appointments</h1>
+        <p>Book a new visit or manage the ones you already have on the calendar.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>Book a new appointment</h2>
+      </div>
+      <div class="card__body">
+        <h:form id="searchForm">
+          <div class="form-grid form-grid--3">
+            <div class="field">
+              <h:outputLabel for="provider" value="Provider"/>
+              <h:selectOneMenu id="provider" value="#{patientAppointments.providerId}">
+                <f:selectItem itemLabel="Any provider" itemValue="#{null}"/>
+                <f:selectItems value="#{patientAppointments.providers}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneMenu>
+              <h:message for="provider" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="type" value="Visit type"/>
+              <h:selectOneMenu id="type" value="#{patientAppointments.typeId}">
+                <f:selectItems value="#{patientAppointments.types}" var="t"
+                               itemValue="#{t.id}" itemLabel="#{t.name}"/>
+              </h:selectOneMenu>
+              <h:message for="type" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="from" value="Earliest date"/>
+              <h:inputText id="from" value="#{patientAppointments.searchFrom}">
+                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+              </h:inputText>
+              <h:message for="from" styleClass="error-text"/>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px">
+            <h:commandButton value="Find available times" action="#{patientAppointments.findSlots}"
+                              styleClass="btn btn--primary"/>
+          </div>
+        </h:form>
+
+        <c:if test="#{patientAppointments.searched}">
+          <div class="divider"/>
+
+          <c:choose>
+            <c:when test="#{empty patientAppointments.slots}">
+              <clinic:emptyState title="No open slots found"
+                                  hint="Try another provider, visit type, or a later start date."
+                                  mark="📅"/>
+            </c:when>
+            <c:otherwise>
+              <h:form id="bookForm">
+                <h4>Choose a time</h4>
+                <div style="max-height:260px; overflow-y:auto; margin-bottom:16px">
+                  <h:selectOneRadio id="slotPicker" value="#{patientAppointments.selectedSlot}"
+                                    layout="pageDirection" styleClass="slots">
+                    <f:selectItems value="#{patientAppointments.slots}" var="s"
+                                   itemValue="#{s.isoStart}" itemLabel="#{s.label}"/>
+                  </h:selectOneRadio>
+                  <h:message for="slotPicker" styleClass="error-text"/>
+                </div>
+
+                <div class="field field--wide">
+                  <h:outputLabel for="reason" value="Reason for visit"/>
+                  <h:inputTextarea id="reason" value="#{patientAppointments.reason}" required="true"
+                                    requiredMessage="Tell us briefly why you'd like to be seen."/>
+                  <h:message for="reason" styleClass="error-text"/>
+                </div>
+
+                <div class="panel-note" style="margin:12px 0">
+                  Requesting a time does not confirm it right away — the front desk reviews every
+                  request and will confirm, adjust, or contact you about your appointment.
+                </div>
+
+                <div class="btn-row">
+                  <h:commandButton value="Request appointment" action="#{patientAppointments.book}"
+                                    styleClass="btn btn--primary"/>
+                </div>
+              </h:form>
+            </c:otherwise>
+          </c:choose>
+        </c:if>
+      </div>
+    </div>
+
+    <c:if test="#{patientAppointments.cancelTargetId ne null}">
+      <div class="card">
+        <div class="card__head"><h3>Cancel appointment</h3></div>
+        <div class="card__body">
+          <h:form id="cancelForm">
+            <div class="field field--wide">
+              <h:outputLabel for="cancelReason" value="Reason for cancelling"/>
+              <h:inputTextarea id="cancelReason" value="#{patientAppointments.cancelReason}"
+                                required="true"
+                                requiredMessage="Let the clinic know why you are cancelling."/>
+              <h:message for="cancelReason" styleClass="error-text"/>
+            </div>
+            <div class="btn-row" style="margin-top:12px">
+              <h:commandButton value="Confirm cancellation" action="#{patientAppointments.cancel}"
+                                styleClass="btn btn--danger"/>
+              <h:commandButton value="Keep appointment" immediate="true"
+                                styleClass="btn btn--secondary">
+                <f:setPropertyActionListener target="#{patientAppointments.cancelTargetId}"
+                                              value="#{null}"/>
+              </h:commandButton>
+            </div>
+          </h:form>
+        </div>
+      </div>
+    </c:if>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>All my appointments</h2>
+      </div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty patientAppointments.appointments}">
+            <clinic:emptyState title="No appointments booked"
+                                hint="Book a visit above and it will appear here."
+                                mark="📅"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">When</th>
+                    <th scope="col">Visit type</th>
+                    <th scope="col">Clinician</th>
+                    <th scope="col">Reason</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientAppointments.appointments}" var="appt">
+                    <tr>
+                      <td class="strong">
+                        <h:outputText value="#{appt.startAt}">
+                          <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td><h:outputText value="#{appt.appointmentType.name}"/></td>
+                      <td><h:outputText value="#{appt.provider.displayName}"/></td>
+                      <td class="muted"><h:outputText value="#{appt.reason}"/></td>
+                      <td><clinic:statusBadge status="#{appt.status}"/></td>
+                      <td class="actions">
+                        <ui:fragment rendered="#{patientAppointments.isCancellable(appt)}">
+                          <h:form>
+                            <h:commandLink action="#{patientAppointments.prepareCancel(appt)}"
+                                            styleClass="btn btn--danger btn--sm">
+                              Cancel
+                            </h:commandLink>
+                          </h:form>
+                        </ui:fragment>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+  </ui:define>
+</ui:composition>

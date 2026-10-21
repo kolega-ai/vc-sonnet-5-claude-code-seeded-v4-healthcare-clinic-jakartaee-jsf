@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+                             https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
+
+  <display-name>Clinic Patient Portal</display-name>
+
+  <context-param>
+    <param-name>jakarta.faces.PROJECT_STAGE</param-name>
+    <param-value>Development</param-value>
+  </context-param>
+  <context-param>
+    <param-name>jakarta.faces.FACELETS_SKIP_COMMENTS</param-name>
+    <param-value>true</param-value>
+  </context-param>
+  <context-param>
+    <param-name>jakarta.faces.SERVLET_MAPPINGS</param-name>
+    <param-value>*.xhtml</param-value>
+  </context-param>
+  <!-- Views are stateless-friendly; the state token is never written to the client. -->
+  <context-param>
+    <param-name>jakarta.faces.STATE_SAVING_METHOD</param-name>
+    <param-value>server</param-value>
+  </context-param>
+  <context-param>
+    <param-name>jakarta.faces.CLIENT_WINDOW_MODE</param-name>
+    <param-value>url</param-value>
+  </context-param>
+  <servlet>
+    <servlet-name>Faces Servlet</servlet-name>
+    <servlet-class>jakarta.faces.webapp.FacesServlet</servlet-class>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Faces Servlet</servlet-name>
+    <url-pattern>*.xhtml</url-pattern>
+  </servlet-mapping>
+
+  <!-- The intake archive the front desk browses: retained import source files
+       and the handoff packets the partner practices collect. -->
+  <servlet>
+    <servlet-name>Intake Archive</servlet-name>
+    <servlet-class>com.clinic.web.IntakeArchiveServlet</servlet-class>
+    <init-param>
+      <param-name>listings</param-name>
+      <param-value>true</param-value>
+    </init-param>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>Intake Archive</servlet-name>
+    <url-pattern>/intake-archive/*</url-pattern>
+  </servlet-mapping>
+
+  <welcome-file-list>
+    <welcome-file>index.xhtml</welcome-file>
+  </welcome-file-list>
+
+  <session-config>
+    <session-timeout>30</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <!-- Enable when the portal is served over TLS (it is behind a TLS
+           terminator in every non-local environment). -->
+      <secure>false</secure>
+      <same-site>Lax</same-site>
+    </cookie-config>
+    <tracking-mode>URL</tracking-mode>
+  </session-config>
+
+  <!-- ==================================================================
+       Declarative security.
+
+       Constraints are ordered from the most specific path to the least,
+       and every protected area is covered by an explicit pattern; there is
+       no broader pattern that could shadow a narrower one. These container
+       checks establish WHICH ROLE is calling. They are necessary but not
+       sufficient: record-level ownership is additionally verified inside
+       the EJB tier for every read, edit, download, export and admin action.
+       =============================================================== -->
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Patient portal</web-resource-name>
+      <url-pattern>/patient/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>patient</role-name>
+    </auth-constraint>
+    <user-data-constraint>
+      <transport-guarantee>NONE</transport-guarantee>
+    </user-data-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Clinician workspace</web-resource-name>
+      <url-pattern>/clinician/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinician</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Clinic administration</web-resource-name>
+      <url-pattern>/admin/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinic_admin</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Staff workspace</web-resource-name>
+      <url-pattern>/staff/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinic_admin</role-name>
+      <role-name>clinician</role-name>
+      <role-name>front_desk</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Signed-in account pages</web-resource-name>
+      <url-pattern>/account/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinic_admin</role-name>
+      <role-name>clinician</role-name>
+      <role-name>front_desk</role-name>
+      <role-name>patient</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Session-authenticated JSON API</web-resource-name>
+      <url-pattern>/api/secure/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>clinic_admin</role-name>
+      <role-name>clinician</role-name>
+      <role-name>front_desk</role-name>
+      <role-name>patient</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <!-- Nothing may be served straight out of the Facelets template directory. -->
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>Template internals</web-resource-name>
+      <url-pattern>/templates/*</url-pattern>
+      <url-pattern>/fragments/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint/>
+  </security-constraint>
+
+  <security-role>
+    <role-name>clinic_admin</role-name>
+  </security-role>
+  <security-role>
+    <role-name>clinician</role-name>
+  </security-role>
+  <security-role>
+    <role-name>front_desk</role-name>
+  </security-role>
+  <security-role>
+    <role-name>patient</role-name>
+  </security-role>
+
+  <error-page>
+    <error-code>403</error-code>
+    <location>/error/forbidden.xhtml</location>
+  </error-page>
+  <error-page>
+    <error-code>404</error-code>
+    <location>/error/not-found.xhtml</location>
+  </error-page>
+  <error-page>
+    <error-code>500</error-code>
+    <location>/error/server-error.xhtml</location>
+  </error-page>
+  <error-page>
+    <exception-type>java.lang.Throwable</exception-type>
+    <location>/error/server-error.xhtml</location>
+  </error-page>
+</web-app>

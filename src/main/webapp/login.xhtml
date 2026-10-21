@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                template="/WEB-INF/templates/public.xhtml">
+
+  <ui:define name="title">Sign in</ui:define>
+
+  <ui:define name="content">
+    <h2>Sign in</h2>
+    <p class="muted">Use the email address the clinic holds for you.</p>
+
+    <c:if test="#{loginBean.signedOut}">
+      <div class="alert alert--success" role="status">
+        <span class="alert__icon" aria-hidden="true">✓</span>
+        <span>You have been signed out.</span>
+      </div>
+    </c:if>
+
+    <h:messages globalOnly="true" styleClass="messages" infoClass="info" warnClass="warn"
+                errorClass="error" fatalClass="fatal" layout="list"/>
+
+    <h:form id="loginForm" prependId="false">
+      <div class="form-grid">
+        <div class="field">
+          <h:outputLabel for="email" value="Email address"/>
+          <h:inputText id="email" value="#{loginBean.email}" required="true"
+                       autocomplete="username" type="email"
+                       requiredMessage="Enter your email address."
+                       validatorMessage="Enter a valid email address."/>
+          <h:message for="email" styleClass="error-text"/>
+        </div>
+
+        <div class="field">
+          <h:outputLabel for="password" value="Password"/>
+          <h:inputSecret id="password" value="#{loginBean.password}" required="true"
+                         autocomplete="current-password" redisplay="false"
+                         requiredMessage="Enter your password."/>
+          <h:message for="password" styleClass="error-text"/>
+        </div>
+
+        <input type="hidden" name="continueTo" value="#{loginBean.continueTarget}"/>
+        <h:commandButton value="Sign in" action="#{loginBean.login}"
+                         styleClass="btn btn--primary btn--block"/>
+      </div>
+    </h:form>
+
+    <p class="small" style="margin-top:16px">
+      <h:link outcome="/forgot-password" value="Forgot your password?"/>
+    </p>
+
+    <div class="auth__demo">
+      <strong>Demo accounts</strong> — password <code>Passw0rd!2026</code> for all four.
+      <table>
+        <tbody>
+          <tr><td>Patient</td><td>patient@northgateclinic.example</td></tr>
+          <tr><td>Front desk</td><td>frontdesk@northgateclinic.example</td></tr>
+          <tr><td>Clinician</td><td>clinician@northgateclinic.example</td></tr>
+          <tr><td>Clinic admin</td><td>admin@northgateclinic.example</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </ui:define>
+</ui:composition>

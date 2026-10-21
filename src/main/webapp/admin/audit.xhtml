@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Audit log</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Audit log</h1>
+        <p>Every clinically or administratively significant action, recorded automatically.</p>
+      </div>
+      <div class="page-head__actions">
+        <h:outputLink value="#{adminAudit.exportUrl()}" styleClass="btn btn--secondary">Export CSV</h:outputLink>
+      </div>
+    </div>
+
+    <div class="panel-note mb-4">
+      The audit trail is append-only. No role — including a clinic administrator — can edit or
+      delete an entry; the database rejects any attempt.
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Filters</h2></div>
+      <div class="card__body">
+        <h:form id="filterForm">
+          <div class="filters">
+            <div class="field">
+              <h:outputLabel for="action" value="Action"/>
+              <h:selectOneMenu id="action" value="#{adminAudit.action}">
+                <f:selectItem itemValue="" itemLabel="All actions"/>
+                <f:selectItems value="#{adminAudit.actions}" var="a" itemValue="#{a}" itemLabel="#{a}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="actorEmail" value="Actor email"/>
+              <h:inputText id="actorEmail" value="#{adminAudit.actorEmail}"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="patientId" value="Patient ID"/>
+              <h:inputText id="patientId" value="#{adminAudit.patientId}"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="from" value="From"/>
+              <h:inputText id="from" value="#{adminAudit.from}">
+                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+              </h:inputText>
+            </div>
+            <div class="field">
+              <h:outputLabel for="to" value="To"/>
+              <h:inputText id="to" value="#{adminAudit.to}">
+                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+              </h:inputText>
+            </div>
+            <div class="field">
+              <h:outputLabel for="sortKey" value="Sort by"/>
+              <h:selectOneMenu id="sortKey" value="#{adminAudit.sortKey}">
+                <f:selectItems value="#{adminAudit.sortKeys}" var="k" itemValue="#{k}" itemLabel="#{k}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="limit" value="Limit"/>
+              <h:inputText id="limit" value="#{adminAudit.limit}"/>
+            </div>
+            <div class="btn-row">
+              <h:commandButton value="Search" action="#{adminAudit.search}" styleClass="btn btn--primary"/>
+              <h:commandButton value="Reset" action="#{adminAudit.reset}" immediate="true"
+                               styleClass="btn btn--secondary"/>
+            </div>
+          </div>
+        </h:form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>Results</h2>
+        <span class="muted small">(<h:outputText value="#{adminAudit.events.size()}"/> events)</span>
+      </div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{adminAudit.emptyResult}">
+            <clinic:emptyState title="No events match" hint="Try widening the filters." mark="○"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Occurred at</th>
+                    <th scope="col">Actor email</th>
+                    <th scope="col">Actor role</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">Entity type</th>
+                    <th scope="col">Entity ID</th>
+                    <th scope="col">Patient ID</th>
+                    <th scope="col">Authorisation basis</th>
+                    <th scope="col">Detail</th>
+                    <th scope="col">IP address</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminAudit.events}" var="e">
+                    <tr>
+                      <td class="strong nowrap">
+                        <h:outputText value="#{e.occurredAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td><h:outputText value="#{e.actorEmail}"/></td>
+                      <td><h:outputText value="#{e.actorRole}"/></td>
+                      <td><h:outputText value="#{e.action}"/></td>
+                      <td><h:outputText value="#{e.entityType}"/></td>
+                      <td><h:outputText value="#{e.entityId}"/></td>
+                      <td><h:outputText value="#{e.patientId}"/></td>
+                      <td class="muted"><h:outputText value="#{e.authBasis}"/></td>
+                      <td class="muted"><h:outputText value="#{e.detail}"/></td>
+                      <td class="muted"><h:outputText value="#{e.ipAddress}"/></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

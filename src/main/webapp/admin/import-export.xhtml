@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Import &amp; export</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Import &amp; export</h1>
+        <p>Bulk-load patients from CSV, or download data for reporting.</p>
+      </div>
+    </div>
+
+    <div class="grid grid--2">
+      <div>
+        <div class="card">
+          <div class="card__head"><h2>Import patients (CSV)</h2></div>
+          <div class="card__body">
+            <h:form id="importForm" enctype="multipart/form-data">
+              <div class="field field--wide">
+                <h:outputLabel for="csvFile" value="CSV file"/>
+                <h:inputFile id="csvFile" value="#{importExport.csvFile}"/>
+                <h:message for="csvFile" styleClass="error-text"/>
+              </div>
+              <div class="field field--wide" style="margin-top:12px">
+                <label class="check">
+                  <h:selectBooleanCheckbox id="dryRun" value="#{importExport.dryRun}"/>
+                  <h:outputLabel for="dryRun" value="Validate only (do not save)"/>
+                </label>
+              </div>
+              <div class="btn-row" style="margin-top:16px">
+                <h:commandButton value="Run import" action="#{importExport.runImport}"
+                                 styleClass="btn btn--primary"/>
+              </div>
+            </h:form>
+
+            <div class="divider"/>
+
+            <h:form id="feedForm">
+              <div class="field field--wide">
+                <h:outputLabel for="feedUrl" value="Or pull the roster from a practice feed"/>
+                <h:inputText id="feedUrl" value="#{importExport.feedUrl}"
+                             styleClass="input--wide"/>
+              </div>
+              <div class="btn-row" style="margin-top:12px">
+                <h:commandButton value="Pull and import" action="#{importExport.runFeedImport}"
+                                 styleClass="btn btn--secondary"/>
+              </div>
+            </h:form>
+
+            <p class="small muted" style="margin-top:16px">Expected header:</p>
+            <div class="code"><h:outputText value="#{importExport.templateCsv}"/></div>
+
+            <c:if test="#{importExport.result ne null}">
+              <div style="margin-top:16px">
+                <div class="grid grid--2">
+                  <div class="stat stat--success">
+                    <span class="stat__label">Imported</span>
+                    <span class="stat__value"><h:outputText value="#{importExport.result.imported}"/></span>
+                  </div>
+                  <div class="stat stat--warning">
+                    <span class="stat__label">Skipped</span>
+                    <span class="stat__value"><h:outputText value="#{importExport.result.skipped}"/></span>
+                  </div>
+                </div>
+                <c:if test="#{not empty importExport.result.errors}">
+                  <div class="alert alert--warning" role="alert" style="margin-top:16px">
+                    <span class="alert__icon" aria-hidden="true">!</span>
+                    <div>
+                      <ui:repeat value="#{importExport.result.errors}" var="err">
+                        <div><h:outputText value="#{err}"/></div>
+                      </ui:repeat>
+                    </div>
+                  </div>
+                </c:if>
+              </div>
+            </c:if>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card__head"><h2>Exports</h2></div>
+          <div class="card__body">
+            <h:form id="exportForm">
+              <div class="form-grid form-grid--3">
+                <div class="field">
+                  <h:outputLabel for="exportFrom" value="From"/>
+                  <h:inputText id="exportFrom" value="#{importExport.exportFrom}">
+                    <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+                  </h:inputText>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="exportTo" value="To"/>
+                  <h:inputText id="exportTo" value="#{importExport.exportTo}">
+                    <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+                  </h:inputText>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="exportProviderId" value="Provider"/>
+                  <h:selectOneMenu id="exportProviderId" value="#{importExport.exportProviderId}">
+                    <f:selectItem itemValue="#{null}" itemLabel="All providers"/>
+                    <f:selectItems value="#{importExport.providers}" var="p"
+                                   itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+                  </h:selectOneMenu>
+                </div>
+              </div>
+            </h:form>
+
+            <div class="divider"/>
+
+            <div class="btn-row" style="flex-direction:column;align-items:stretch;gap:16px">
+              <div>
+                <h:outputLink value="#{importExport.scheduleExportUrl()}" styleClass="btn btn--secondary btn--block">
+                  Appointment schedule (CSV)
+                </h:outputLink>
+                <p class="small muted" style="margin-top:6px">All appointments in the selected date
+                   range, optionally filtered by provider.</p>
+              </div>
+              <div>
+                <h:outputLink value="#{importExport.patientExportUrl()}" styleClass="btn btn--secondary btn--block">
+                  Patient directory (CSV)
+                </h:outputLink>
+                <p class="small muted" style="margin-top:6px">The full active patient roster.</p>
+              </div>
+              <div>
+                <h:outputLink value="#{importExport.auditExportUrl()}" styleClass="btn btn--secondary btn--block">
+                  Audit log (CSV)
+                </h:outputLink>
+                <p class="small muted" style="margin-top:6px">Audit events in the selected date range.</p>
+              </div>
+              <div>
+                <h:outputLink value="#{importExport.payerExportUrl()}" styleClass="btn btn--secondary btn--block">
+                  Payer visit summary (CSV)
+                </h:outputLink>
+                <p class="small muted" style="margin-top:6px">Visits grouped by the payer kept on this
+                   workstation.</p>
+              </div>
+              <div>
+                <h:outputLink value="#{importExport.archiveUrl()}" styleClass="btn btn--secondary btn--block">
+                  Intake archive
+                </h:outputLink>
+                <p class="small muted" style="margin-top:6px">Retained import files and partner handoff
+                   packets.</p>
+              </div>
+            </div>
+
+            <div class="panel-note" style="margin-top:20px">
+              Every export re-checks the caller's scope and writes an audit event naming the
+              report and row count.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                template="/WEB-INF/templates/public.xhtml">
+
+  <ui:define name="title">Welcome</ui:define>
+
+  <ui:define name="metadata">
+    <f:metadata>
+      <f:viewAction action="#{indexBean.route}"/>
+    </f:metadata>
+  </ui:define>
+
+  <ui:define name="content">
+    <h2>Welcome</h2>
+    <p class="muted">Sign in to view your appointments, messages, prescriptions and visit
+       summaries.</p>
+    <h:link outcome="/login" value="Sign in" styleClass="btn btn--primary btn--block"/>
+    <p class="small" style="margin-top:16px">
+      <h:link outcome="/forgot-password" value="Forgot your password?"/>
+      <br/>
+      <h:link outcome="/checkin" value="Waiting-room check-in"/>
+    </p>
+  </ui:define>
+</ui:composition>

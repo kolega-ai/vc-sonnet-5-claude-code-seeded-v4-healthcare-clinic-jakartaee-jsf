@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Refill queue</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Refill queue</h1>
+        <p>Approve, deny or ask for more information on prescription refills.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Open requests</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{refillQueue.emptyQueue}">
+            <clinic:emptyState title="No open requests" hint="Refill requests will appear here." mark="💊"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Medication</th>
+                    <th scope="col">Dosage</th>
+                    <th scope="col">Requested</th>
+                    <th scope="col">Patient note</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{refillQueue.queue}" var="r">
+                    <tr>
+                      <td>
+                        <h:outputText value="#{r.patient.fullName}"/>
+                        <div class="muted small"><h:outputText value="#{r.patient.mrn}"/></div>
+                      </td>
+                      <td class="strong"><h:outputText value="#{r.prescription.medicationName}"/></td>
+                      <td><h:outputText value="#{r.prescription.dosage}"/></td>
+                      <td>
+                        <h:outputText value="#{r.requestedAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                      </td>
+                      <td class="muted"><h:outputText value="#{r.patientNote}"/></td>
+                      <td><clinic:statusBadge status="#{r.status}"/></td>
+                      <td class="actions">
+                        <h:form>
+                          <h:commandButton value="Review" styleClass="btn btn--secondary btn--sm">
+                            <f:actionListener binding="#{refillQueue.select(r)}"/>
+                          </h:commandButton>
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <c:if test="#{refillQueue.selected ne null}">
+      <div class="card">
+        <div class="card__head"><h2>Review request</h2></div>
+        <div class="card__body">
+          <dl class="def">
+            <dt>Patient</dt>
+            <dd><h:outputText value="#{refillQueue.selected.patient.fullName}"/></dd>
+            <dt>Medication</dt>
+            <dd><h:outputText value="#{refillQueue.selected.prescription.medicationName}"/></dd>
+            <dt>Dosage</dt>
+            <dd><h:outputText value="#{refillQueue.selected.prescription.dosage}"/></dd>
+            <dt>Instructions</dt>
+            <dd><h:outputText value="#{refillQueue.selected.prescription.instructions}"/></dd>
+            <dt>Refills remaining</dt>
+            <dd><h:outputText value="#{refillQueue.selected.prescription.refillsRemaining}"/></dd>
+            <dt>Patient note</dt>
+            <dd><h:outputText value="#{refillQueue.selected.patientNote}"/></dd>
+          </dl>
+
+          <c:if test="#{refillQueue.decider}">
+            <h:form>
+              <div class="field field--wide mb-4">
+                <h:outputLabel for="staffNote" value="Staff note"/>
+                <h:inputTextarea id="staffNote" value="#{refillQueue.staffNote}"/>
+                <span class="hint">A note is required to deny or request information.</span>
+                <h:message for="staffNote" styleClass="error-text"/>
+              </div>
+
+              <div class="workflow-bar">
+                <span class="workflow-bar__label">Decision</span>
+                <h:commandButton value="Approve" action="#{refillQueue.approve}" styleClass="btn btn--success"/>
+                <h:commandButton value="Deny" action="#{refillQueue.deny}" styleClass="btn btn--danger"/>
+                <h:commandButton value="Request more information" action="#{refillQueue.requestInformation}" styleClass="btn btn--accent"/>
+              </div>
+            </h:form>
+
+            <div class="divider"/>
+
+            <h:form>
+              <div class="field field--wide mb-4">
+                <h:outputLabel for="pharmacyAccessCode" value="Pharmacy access code"/>
+                <h:inputText id="pharmacyAccessCode" value="#{refillQueue.pharmacyAccessCode}"/>
+                <span class="hint">The shared code the partner pharmacy issued for its
+                      dispensing bridge.</span>
+              </div>
+              <h:commandButton value="Send to pharmacy" action="#{refillQueue.sendToPharmacy}"
+                               styleClass="btn btn--secondary"/>
+            </h:form>
+          </c:if>
+
+          <div class="divider"/>
+
+          <h3>Message the patient</h3>
+          <h:form>
+            <div class="field field--wide mb-4">
+              <h:outputLabel for="messageSubject" value="Subject"/>
+              <h:inputText id="messageSubject" value="#{refillQueue.messageSubject}"/>
+              <h:message for="messageSubject" styleClass="error-text"/>
+            </div>
+            <div class="field field--wide mb-4">
+              <h:outputLabel for="messageBody" value="Message"/>
+              <h:inputTextarea id="messageBody" value="#{refillQueue.messageBody}"/>
+              <h:message for="messageBody" styleClass="error-text"/>
+            </div>
+            <h:commandButton value="Send message" action="#{refillQueue.messagePatient}" styleClass="btn btn--secondary"/>
+          </h:form>
+        </div>
+      </div>
+    </c:if>
+  </ui:define>
+</ui:composition>

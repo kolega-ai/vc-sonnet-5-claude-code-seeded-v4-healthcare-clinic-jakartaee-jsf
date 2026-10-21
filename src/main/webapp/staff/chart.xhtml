@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="metadata">
+    <f:metadata>
+    <f:viewParam name="patientId" value="#{patientChart.patientId}"/>
+    <f:viewAction action="#{patientChart.load}"/>
+  </f:metadata>
+  </ui:define>
+
+  <ui:define name="title">Patient chart</ui:define>
+
+  <ui:define name="content">
+
+    <div class="breadcrumb">
+      <h:link outcome="/staff/patients" value="Patients"/>
+      <span>/</span>
+      Patient chart
+    </div>
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Patient chart</h1>
+        <p>Demographics, appointments, forms and messages in one place.</p>
+      </div>
+    </div>
+
+    <ui:include src="/WEB-INF/fragments/patient-chart.xhtml"/>
+  </ui:define>
+</ui:composition>

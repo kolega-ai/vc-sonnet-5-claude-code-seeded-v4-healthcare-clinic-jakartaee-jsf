@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">My care</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Hello, #{patientDashboard.firstName}</h1>
+        <p>Here is what is happening with your care right now.</p>
+      </div>
+      <div class="page-head__actions">
+        <h:link outcome="/patient/appointments" value="Book an appointment"
+                styleClass="btn btn--primary"/>
+        <h:link outcome="/patient/messages" value="Message the clinic"
+                styleClass="btn btn--secondary"/>
+      </div>
+    </div>
+
+    <c:if test="#{not patientDashboard.linked}">
+      <div class="alert alert--warning" role="alert">
+        <span class="alert__icon" aria-hidden="true">!</span>
+        <span>Your sign-in is not yet linked to a patient record. Please call the clinic so
+              the front desk can connect them.</span>
+      </div>
+    </c:if>
+
+    <c:if test="#{patientDashboard.linked}">
+
+      <!-- ============================ summary tiles =========================== -->
+      <div class="grid grid--4" style="margin-bottom:24px">
+        <div class="stat stat--brand">
+          <span class="stat__label">Upcoming visits</span>
+          <span class="stat__value">#{patientDashboard.upcomingCount}</span>
+          <span class="stat__hint">
+            <c:choose>
+              <c:when test="#{patientDashboard.nextAppointment ne null}">
+                Next: <h:outputText value="#{patientDashboard.nextAppointment.startAt}">
+                  <f:convertDateTime type="localDateTime" pattern="EEE d MMM, HH:mm"/>
+                </h:outputText>
+              </c:when>
+              <c:otherwise>Nothing booked</c:otherwise>
+            </c:choose>
+          </span>
+        </div>
+        <div class="stat stat--info">
+          <span class="stat__label">Unread messages</span>
+          <span class="stat__value">#{patientDashboard.unreadMessages}</span>
+          <span class="stat__hint">From your care team</span>
+        </div>
+        <div class="stat stat--success">
+          <span class="stat__label">Active prescriptions</span>
+          <span class="stat__value">#{patientDashboard.activePrescriptions}</span>
+          <span class="stat__hint">Refills can be requested online</span>
+        </div>
+        <div class="stat #{patientDashboard.outstandingForms gt 0 ? 'stat--warning' : ''}">
+          <span class="stat__label">Forms needing attention</span>
+          <span class="stat__value">#{patientDashboard.outstandingForms}</span>
+          <span class="stat__hint">Submitted or returned for correction</span>
+        </div>
+      </div>
+
+      <div class="grid grid--sidebar">
+        <div>
+
+          <!-- ========================= upcoming visits ======================== -->
+          <div class="card">
+            <div class="card__head">
+              <h2>Upcoming appointments</h2>
+              <div class="card__actions">
+                <h:link outcome="/patient/appointments" value="Manage"
+                        styleClass="btn btn--secondary btn--sm"/>
+              </div>
+            </div>
+            <div class="card__body card__body--flush">
+              <c:choose>
+                <c:when test="#{empty patientDashboard.upcoming}">
+                  <clinic:emptyState title="No appointments booked"
+                                     hint="Book a visit and it will appear here."
+                                     mark="📅"/>
+                </c:when>
+                <c:otherwise>
+                  <div class="table-wrap">
+                    <table class="data">
+                      <thead>
+                        <tr>
+                          <th scope="col">When</th>
+                          <th scope="col">Visit type</th>
+                          <th scope="col">Clinician</th>
+                          <th scope="col">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ui:repeat value="#{patientDashboard.upcoming}" var="appt">
+                          <tr>
+                            <td class="strong">
+                              <h:outputText value="#{appt.startAt}">
+                                <f:convertDateTime type="localDateTime"
+                                                   pattern="EEE d MMM yyyy, HH:mm"/>
+                              </h:outputText>
+                            </td>
+                            <td><h:outputText value="#{appt.appointmentType.name}"/></td>
+                            <td><h:outputText value="#{appt.provider.displayName}"/></td>
+                            <td><clinic:statusBadge status="#{appt.status}"/></td>
+                          </tr>
+                        </ui:repeat>
+                      </tbody>
+                    </table>
+                  </div>
+                </c:otherwise>
+              </c:choose>
+            </div>
+          </div>
+
+          <!-- ======================= released summaries ======================= -->
+          <div class="card">
+            <div class="card__head">
+              <h2>Recent visit summaries</h2>
+              <div class="card__actions">
+                <h:link outcome="/patient/visit-summaries" value="View all"
+                        styleClass="btn btn--secondary btn--sm"/>
+              </div>
+            </div>
+            <div class="card__body card__body--flush">
+              <c:choose>
+                <c:when test="#{empty patientDashboard.summaries}">
+                  <clinic:emptyState title="No visit summaries yet"
+                                     hint="A summary appears here once your clinician releases it."
+                                     mark="📝"/>
+                </c:when>
+                <c:otherwise>
+                  <div class="table-wrap">
+                    <table class="data">
+                      <thead>
+                        <tr>
+                          <th scope="col">Visit date</th>
+                          <th scope="col">Clinician</th>
+                          <th scope="col">Reason</th>
+                          <th scope="col">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <ui:repeat value="#{patientDashboard.summaries}" var="vs">
+                          <tr>
+                            <td class="strong">
+                              <h:link outcome="/patient/visit-summaries">
+                                <f:param name="id" value="#{vs.id}"/>
+                                <h:outputText value="#{vs.visitDate}">
+                                  <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                                </h:outputText>
+                              </h:link>
+                            </td>
+                            <td><h:outputText value="#{vs.provider.displayName}"/></td>
+                            <td class="muted"><h:outputText value="#{vs.chiefComplaint}"/></td>
+                            <td><clinic:statusBadge status="#{vs.status}"/></td>
+                          </tr>
+                        </ui:repeat>
+                      </tbody>
+                    </table>
+                  </div>
+                </c:otherwise>
+              </c:choose>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============================== aside ============================== -->
+        <div>
+          <div class="card">
+            <div class="card__head"><h3>Refill requests</h3></div>
+            <div class="card__body">
+              <c:choose>
+                <c:when test="#{empty patientDashboard.refills}">
+                  <p class="muted small mb-0">No refill requests in progress.</p>
+                </c:when>
+                <c:otherwise>
+                  <ul class="timeline">
+                    <ui:repeat value="#{patientDashboard.refills}" var="r">
+                      <li>
+                        <div class="timeline__what">
+                          <h:outputText value="#{r.prescription.medicationName}"/>
+                        </div>
+                        <div class="timeline__when">
+                          <h:outputText value="#{r.requestedAt}">
+                            <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                          </h:outputText>
+                        </div>
+                        <clinic:statusBadge status="#{r.status}"/>
+                      </li>
+                    </ui:repeat>
+                  </ul>
+                </c:otherwise>
+              </c:choose>
+              <h:link outcome="/patient/prescriptions" value="My prescriptions"
+                      styleClass="btn btn--secondary btn--sm btn--block"
+                      style="margin-top:12px"/>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h3>My documents</h3></div>
+            <div class="card__body">
+              <c:choose>
+                <c:when test="#{empty patientDashboard.documents}">
+                  <p class="muted small mb-0">Nothing uploaded yet.</p>
+                </c:when>
+                <c:otherwise>
+                  <ul class="timeline">
+                    <ui:repeat value="#{patientDashboard.documents}" var="d">
+                      <li>
+                        <div class="timeline__what"><h:outputText value="#{d.title}"/></div>
+                        <div class="timeline__when">
+                          <h:outputText value="#{d.category.label}"/> ·
+                          <h:outputText value="#{d.createdAt}">
+                            <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                          </h:outputText>
+                        </div>
+                        <clinic:statusBadge status="#{d.status}"/>
+                      </li>
+                    </ui:repeat>
+                  </ul>
+                </c:otherwise>
+              </c:choose>
+              <h:link outcome="/patient/documents" value="Upload a form"
+                      styleClass="btn btn--primary btn--sm btn--block"
+                      style="margin-top:12px"/>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h3>Need help?</h3></div>
+            <div class="card__body">
+              <p class="small">For anything urgent, call the clinic on
+                 <strong>#{layout.clinicPhone}</strong>. In an emergency, call your local
+                 emergency number.</p>
+              <h:link outcome="/patient/messages" value="Send a secure message"
+                      styleClass="btn btn--secondary btn--sm btn--block"/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </c:if>
+  </ui:define>
+</ui:composition>

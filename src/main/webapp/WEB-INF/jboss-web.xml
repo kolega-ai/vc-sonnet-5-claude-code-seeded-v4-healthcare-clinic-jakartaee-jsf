@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jboss-web>
+  <context-root>/</context-root>
+  <!-- Jakarta Security supplies the authentication mechanism and identity
+       store (see com.clinic.security.SecurityConfiguration); no legacy
+       WildFly security domain configuration is required. -->
+</jboss-web>

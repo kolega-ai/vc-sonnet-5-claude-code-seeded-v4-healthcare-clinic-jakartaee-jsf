@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Clinic administration</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Clinic administration</h1>
+        <p>A clinic-wide view of today, plus the administrative tools you manage.</p>
+      </div>
+      <div class="page-head__actions">
+        <h:link outcome="/admin/audit" value="Audit log" styleClass="btn btn--secondary"/>
+        <h:link outcome="/admin/import-export" value="Import &amp; export" styleClass="btn btn--secondary"/>
+      </div>
+    </div>
+
+    <ui:include src="/WEB-INF/fragments/staff-dashboard.xhtml"/>
+  </ui:define>
+</ui:composition>

@@ -1,0 +1,21 @@
+target/
+*.class
+*.war
+*.log
+
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+.DS_Store
+Thumbs.db
+
+.env
+*.local
+
+# Local document storage when running outside a container.
+/var/clinic/
+documents-local/

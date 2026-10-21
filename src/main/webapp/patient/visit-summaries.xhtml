@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Visit summaries</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Visit summaries</h1>
+        <p>Summaries your clinician has released for you to review.</p>
+      </div>
+      <div class="page-head__actions">
+        <h:outputLink value="#{patientVisitSummaries.exportUrl()}" styleClass="btn btn--secondary">
+          Download my summaries (JSON)
+        </h:outputLink>
+      </div>
+    </div>
+
+    <div class="grid grid--split">
+
+      <div class="card">
+        <div class="card__head"><h2>Released summaries</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty patientVisitSummaries.summaries}">
+              <clinic:emptyState title="No visit summaries yet"
+                                  hint="A summary appears here once your clinician releases it."
+                                  mark="📝"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">Visit date</th>
+                      <th scope="col">Clinician</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{patientVisitSummaries.summaries}" var="vs">
+                      <tr>
+                        <td class="strong">
+                          <h:form>
+                            <h:commandLink action="#{patientVisitSummaries.open(vs.id)}">
+                              <h:outputText value="#{vs.visitDate}">
+                                <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                              </h:outputText>
+                            </h:commandLink>
+                          </h:form>
+                        </td>
+                        <td><h:outputText value="#{vs.provider.displayName}"/></td>
+                        <td><clinic:statusBadge status="#{vs.status}"/></td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2>Summary detail</h2></div>
+        <div class="card__body">
+          <c:choose>
+            <c:when test="#{patientVisitSummaries.selected eq null}">
+              <clinic:emptyState title="No summary selected"
+                                  hint="Choose a visit on the left to see its summary."
+                                  mark="📝"/>
+            </c:when>
+            <c:otherwise>
+              <!-- Clinician notes are internal-only and are never part of the patient view. -->
+              <dl class="def">
+                <dt>Visit date</dt>
+                <dd>
+                  <h:outputText value="#{patientVisitSummaries.selected.visitDate}">
+                    <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                  </h:outputText>
+                </dd>
+
+                <dt>Clinician</dt>
+                <dd><h:outputText value="#{patientVisitSummaries.selected.provider.displayName}"/></dd>
+
+                <dt>Status</dt>
+                <dd><clinic:statusBadge status="#{patientVisitSummaries.selected.status}"/></dd>
+
+                <dt>Chief complaint</dt>
+                <dd><h:outputText value="#{patientVisitSummaries.selected.chiefComplaint}"/></dd>
+
+                <dt>Assessment / diagnosis</dt>
+                <dd><h:outputText value="#{patientVisitSummaries.selected.diagnosis}"/></dd>
+
+                <dt>Care instructions</dt>
+                <dd><h:outputText value="#{patientVisitSummaries.selected.careInstructions}"/></dd>
+
+                <dt>Follow-up advice</dt>
+                <dd><h:outputText value="#{patientVisitSummaries.selected.followUpAdvice}"/></dd>
+
+                <dt>Released at</dt>
+                <dd>
+                  <h:outputText value="#{patientVisitSummaries.selected.releasedAt}">
+                    <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                  </h:outputText>
+                </dd>
+              </dl>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+
+    </div>
+
+  </ui:define>
+</ui:composition>

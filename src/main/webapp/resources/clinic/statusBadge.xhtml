@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:cc="jakarta.faces.composite"
+                xmlns:h="jakarta.faces.html">
+
+  <!-- Status badge. Never colour-only: the label always ships with the tone. -->
+  <cc:interface>
+    <cc:attribute name="status" required="true"
+                  shortDescription="Any CodedEnum with getLabel()/getTone()"/>
+  </cc:interface>
+
+  <cc:implementation>
+    <span class="badge badge--#{cc.attrs.status.tone}">
+      <h:outputText value="#{cc.attrs.status.label}"/>
+    </span>
+  </cc:implementation>
+</ui:composition>

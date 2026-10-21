@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      lang="en">
+<h:head>
+  <f:facet name="first">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="robots" content="noindex, nofollow"/>
+  </f:facet>
+  <title><ui:insert name="title">Sign in</ui:insert> · #{layout.clinicName}</title>
+  <link rel="stylesheet"
+        href="#{request.contextPath}/resources/css/clinic.css?v=#{layout.assetSuffix}"/>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f4c52'/%3E%3Cpath d='M14 7h4v7h7v4h-7v7h-4v-7H7v-4h7z' fill='white'/%3E%3C/svg%3E"/>
+</h:head>
+
+<h:body>
+  <ui:insert name="metadata"/>
+
+  <div class="auth">
+    <aside class="auth__aside">
+      <span class="sidebar__mark" aria-hidden="true">NG</span>
+      <h1>#{layout.clinicName}</h1>
+      <p>Your appointments, visit summaries, prescriptions and secure messages with the
+         practice — in one place, on any device.</p>
+      <ul class="auth__points">
+        <li>Book, reschedule or cancel an appointment</li>
+        <li>Read visit summaries once your clinician releases them</li>
+        <li>Request prescription refills and track the decision</li>
+        <li>Upload pre-visit forms and insurance details securely</li>
+      </ul>
+      <p class="small" style="margin-top:32px;color:#a9d9dc">
+        #{layout.clinicAddress} · #{layout.clinicPhone}
+      </p>
+    </aside>
+
+    <div class="auth__panel">
+      <div class="auth__card">
+        <ui:insert name="content"/>
+      </div>
+    </div>
+  </div>
+</h:body>
+</html>

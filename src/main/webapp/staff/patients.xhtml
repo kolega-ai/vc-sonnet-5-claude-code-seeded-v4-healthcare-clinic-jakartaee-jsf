@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Patients</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Patients</h1>
+        <p>Search the patient directory and open a chart.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__body">
+        <h:form>
+          <div class="filters">
+            <div class="field">
+              <h:outputLabel for="text" value="Name or MRN"/>
+              <h:inputText id="text" value="#{patientDirectory.criteria.text}"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="provider" value="Primary provider"/>
+              <h:selectOneMenu id="provider" value="#{patientDirectory.criteria.providerId}">
+                <f:selectItem itemLabel="All providers" itemValue="#{null}"/>
+                <f:selectItems value="#{patientDirectory.providers}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="active" value="Status"/>
+              <h:selectOneMenu id="active" value="#{patientDirectory.criteria.active}">
+                <f:selectItem itemLabel="All" itemValue="#{null}"/>
+                <f:selectItem itemLabel="Active" itemValue="#{true}"/>
+                <f:selectItem itemLabel="Inactive" itemValue="#{false}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="bornAfter" value="Born after"/>
+              <h:inputText id="bornAfter" value="#{patientDirectory.criteria.bornAfter}">
+                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+              </h:inputText>
+            </div>
+            <div class="field">
+              <h:outputLabel for="bornBefore" value="Born before"/>
+              <h:inputText id="bornBefore" value="#{patientDirectory.criteria.bornBefore}">
+                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+              </h:inputText>
+            </div>
+            <div class="field">
+              <h:outputLabel for="sort" value="Sort by"/>
+              <h:selectOneMenu id="sort" value="#{patientDirectory.criteria.sortKey}">
+                <f:selectItems value="#{patientDirectory.sortKeys}" var="k" itemValue="#{k}" itemLabel="#{k}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="btn-row">
+              <h:commandButton value="Search" action="#{patientDirectory.search}" styleClass="btn btn--primary"/>
+              <h:commandButton value="Reset" action="#{patientDirectory.reset}" styleClass="btn btn--secondary"/>
+            </div>
+          </div>
+        </h:form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>Results</h2>
+        <span class="muted small">#{patientDirectory.resultCount} results</span>
+      </div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{patientDirectory.emptyResult}">
+            <clinic:emptyState title="No patients matched"
+                               hint="Try widening your search criteria."
+                               mark="🔍"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">MRN</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Date of birth</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Primary provider</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientDirectory.results}" var="p">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{p.mrn}"/></td>
+                      <td><h:outputText value="#{p.fullName}"/></td>
+                      <td>
+                        <h:outputText value="#{p.dateOfBirth}">
+                          <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                        <span class="muted small">(#{p.age})</span>
+                      </td>
+                      <td><h:outputText value="#{p.phone}"/></td>
+                      <td><h:outputText value="#{p.primaryProvider.displayName}"/></td>
+                      <td>
+                        <ui:fragment rendered="#{p.active}">
+                            <span class="badge badge--success">Active</span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (p.active)}">
+                            <span class="badge badge--neutral">Inactive</span>
+                          </ui:fragment>
+                      </td>
+                      <td class="actions">
+                        <h:outputLink value="#{request.contextPath}#{patientDirectory.chartLink(p)}"
+                                      styleClass="btn btn--secondary btn--sm">
+                          Open chart
+                        </h:outputLink>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

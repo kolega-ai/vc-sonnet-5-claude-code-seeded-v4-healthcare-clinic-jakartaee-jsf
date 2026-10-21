@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:ui="jakarta.faces.facelets"
+                template="/WEB-INF/templates/public.xhtml">
+
+  <ui:define name="title">Check in for your visit</ui:define>
+
+  <ui:define name="content">
+    <h2>Check in for your visit</h2>
+    <p class="muted">Enter the record number from your appointment letter and your date of
+       birth. This waiting-room device will follow your visit for you.</p>
+
+    <h:messages globalOnly="true" styleClass="messages" infoClass="info" warnClass="warn"
+                errorClass="error" fatalClass="fatal" layout="list"/>
+
+    <h:panelGroup rendered="#{!checkIn.checkedIn}">
+      <h:form prependId="false">
+        <div class="form-grid">
+          <div class="field">
+            <h:outputLabel for="mrn" value="Record number"/>
+            <h:inputText id="mrn" value="#{checkIn.mrn}" required="true"
+                         requiredMessage="Enter your record number."/>
+            <h:message for="mrn" styleClass="error-text"/>
+          </div>
+          <div class="field">
+            <h:outputLabel for="dob" value="Date of birth"/>
+            <h:inputText id="dob" value="#{checkIn.dateOfBirth}" required="true"
+                         requiredMessage="Enter your date of birth."/>
+            <span class="hint">For example 1984-03-11.</span>
+            <h:message for="dob" styleClass="error-text"/>
+          </div>
+          <h:commandButton value="Check in" action="#{checkIn.begin}"
+                           styleClass="btn btn--primary btn--block"/>
+        </div>
+      </h:form>
+    </h:panelGroup>
+
+    <h:panelGroup rendered="#{checkIn.checkedIn}">
+      <h3>You are checked in</h3>
+      <p>Welcome, <strong>#{checkIn.patient.fullName}</strong>.</p>
+      <p class="muted">
+        <h:outputText rendered="#{checkIn.visit == null}"
+                      value="There is no appointment on your record for today. Please speak to the front desk."/>
+        <h:outputText rendered="#{checkIn.visit != null}"
+                      value="Your visit is with #{checkIn.visit.provider.displayName} at #{checkIn.visit.startAt.toLocalTime()}."/>
+      </p>
+      <h:form prependId="false">
+        <h:commandButton value="Finish" action="#{checkIn.startOver}" styleClass="btn btn--block"/>
+      </h:form>
+    </h:panelGroup>
+
+    <p class="small" style="margin-top:16px">
+      <h:link outcome="/login" value="Staff sign in"/>
+    </p>
+  </ui:define>
+</ui:composition>

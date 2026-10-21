@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Clinic settings</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Clinic settings</h1>
+        <p>Configuration values, API keys and webhook endpoints for this clinic.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Configuration</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty adminSettings.settings}">
+            <clinic:emptyState title="No settings defined" hint="" mark="○"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Key</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Value</th>
+                    <th scope="col">Last updated</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminSettings.settings}" var="s">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{s.settingKey}"/></td>
+                      <td class="muted"><h:outputText value="#{s.description}"/></td>
+                      <td>
+                        <h:form>
+                          <h:inputText value="#{adminSettings.edits[s.settingKey]}"/>
+                        </h:form>
+                      </td>
+                      <td class="muted nowrap">
+                        <h:outputText value="#{s.updatedAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td class="actions">
+                        <h:form>
+                          <h:commandButton value="Save" action="#{adminSettings.save(s)}"
+                                           styleClass="btn btn--primary btn--sm"/>
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>API keys</h2></div>
+      <div class="card__body">
+        <c:if test="#{adminSettings.issuedKey ne null}">
+          <div class="alert alert--success" role="alert">
+            <span class="alert__icon" aria-hidden="true">✓</span>
+            <div>
+              <div class="code"><h:outputText value="#{adminSettings.issuedKey}"/></div>
+              <p class="mb-0" style="margin-top:8px">Copy this now — only its hash is stored and it
+                 will not be shown again.</p>
+            </div>
+          </div>
+        </c:if>
+        <h:form id="apiKeyForm">
+          <div class="form-grid form-grid--2">
+            <div class="field">
+              <h:outputLabel for="newKeyLabel" value="Label"/>
+              <h:inputText id="newKeyLabel" value="#{adminSettings.newKeyLabel}" required="true"/>
+              <h:message for="newKeyLabel" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="newKeyScope" value="Scope"/>
+              <h:selectOneMenu id="newKeyScope" value="#{adminSettings.newKeyScope}">
+                <f:selectItems value="#{adminSettings.scopes}" var="sc" itemValue="#{sc}" itemLabel="#{sc}"/>
+              </h:selectOneMenu>
+              <h:message for="newKeyScope" styleClass="error-text"/>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px">
+            <h:commandButton value="Create key" action="#{adminSettings.createApiKey}"
+                             styleClass="btn btn--primary"/>
+          </div>
+        </h:form>
+
+        <c:choose>
+          <c:when test="#{empty adminSettings.apiKeys}">
+            <clinic:emptyState title="No API keys yet" hint="Create one above." mark="○"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap" style="margin-top:16px">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Label</th>
+                    <th scope="col">Prefix</th>
+                    <th scope="col">Scope</th>
+                    <th scope="col">Created by</th>
+                    <th scope="col">Created at</th>
+                    <th scope="col">Last used</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminSettings.apiKeys}" var="k">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{k.label}"/></td>
+                      <td><h:outputText value="#{k.keyPrefix}"/></td>
+                      <td><h:outputText value="#{k.scope}"/></td>
+                      <td><h:outputText value="#{k.createdBy.fullName}"/></td>
+                      <td class="muted nowrap">
+                        <h:outputText value="#{k.createdAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td class="muted nowrap">
+                        <ui:fragment rendered="#{k.lastUsedAt ne null}">
+                            <h:outputText value="#{k.lastUsedAt}">
+                              <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                            </h:outputText>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (k.lastUsedAt ne null)}">Never</ui:fragment>
+                      </td>
+                      <td>
+                        <ui:fragment rendered="#{k.active}">
+                            <span class="badge badge--success">Active</span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (k.active)}">
+                            <span class="badge badge--neutral">Revoked</span>
+                          </ui:fragment>
+                      </td>
+                      <td class="actions">
+                        <ui:fragment rendered="#{k.active}">
+                          <h:form>
+                            <h:commandButton value="Revoke" action="#{adminSettings.revoke(k)}"
+                                             styleClass="btn btn--danger btn--sm"/>
+                          </h:form>
+                        </ui:fragment>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Webhook endpoints</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty adminSettings.endpoints}">
+            <clinic:emptyState title="No webhook endpoints" hint="" mark="○"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Label</th>
+                    <th scope="col">URL</th>
+                    <th scope="col">Event type</th>
+                    <th scope="col">Signing secret</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminSettings.endpoints}" var="w">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{w.label}"/></td>
+                      <td><h:outputText value="#{w.url}"/></td>
+                      <td><h:outputText value="#{w.eventType}"/></td>
+                      <td class="code"><h:outputText value="#{w.signingKey}"/></td>
+                      <td>
+                        <ui:fragment rendered="#{w.active}">
+                            <span class="badge badge--success">Active</span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (w.active)}">
+                            <span class="badge badge--neutral">Inactive</span>
+                          </ui:fragment>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+        <div style="margin:16px">
+          <h:form id="endpointForm">
+            <div class="form-grid form-grid--3">
+              <div class="field">
+                <h:outputLabel for="epLabel" value="Label"/>
+                <h:inputText id="epLabel" value="#{adminSettings.newEndpointLabel}"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="epUrl" value="Endpoint URL"/>
+                <h:inputText id="epUrl" value="#{adminSettings.newEndpointUrl}"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="epEvent" value="Event type"/>
+                <h:selectOneMenu id="epEvent" value="#{adminSettings.newEndpointEvent}">
+                  <f:selectItems value="#{adminSettings.eventTypes}"/>
+                </h:selectOneMenu>
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:12px">
+              <h:commandButton value="Register endpoint" action="#{adminSettings.addEndpoint}"
+                               styleClass="btn btn--primary"/>
+            </div>
+          </h:form>
+        </div>
+        <div class="panel-note" style="margin:16px">
+          Deliveries are posted to the registered endpoint and recorded — see the Operations page.
+        </div>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Staff &amp; accounts</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Staff &amp; accounts</h1>
+        <p>Invite staff and patient portal accounts, manage roles and enable or disable sign-in.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>Invite a user</h2>
+      </div>
+      <div class="card__body">
+        <div class="panel-note mb-4">
+          The account is created without a usable password. An activation link is written to the
+          local outbox — no email is actually sent anywhere.
+        </div>
+        <h:form id="inviteForm">
+          <div class="form-grid form-grid--2">
+            <div class="field">
+              <h:outputLabel for="inviteEmail" value="Email"/>
+              <h:inputText id="inviteEmail" value="#{adminUsers.inviteEmail}" required="true"/>
+              <h:message for="inviteEmail" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="inviteName" value="Full name"/>
+              <h:inputText id="inviteName" value="#{adminUsers.inviteName}" required="true"/>
+              <h:message for="inviteName" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="invitePhone" value="Phone"/>
+              <h:inputText id="invitePhone" value="#{adminUsers.invitePhone}"/>
+              <h:message for="invitePhone" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="inviteRole" value="Role"/>
+              <h:selectOneMenu id="inviteRole" value="#{adminUsers.inviteRole}">
+                <f:selectItems value="#{adminUsers.roles}" var="r"
+                               itemValue="#{r.code}" itemLabel="#{r.label}"/>
+              </h:selectOneMenu>
+              <h:message for="inviteRole" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="inviteProviderId" value="Provider account"/>
+              <h:selectOneMenu id="inviteProviderId" value="#{adminUsers.inviteProviderId}">
+                <f:selectItem itemValue="#{null}" itemLabel="— none —"/>
+                <f:selectItems value="#{adminUsers.providers}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneMenu>
+              <span class="hint">Only used for clinician accounts.</span>
+              <h:message for="inviteProviderId" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="invitePatientId" value="Patient account"/>
+              <h:selectOneMenu id="invitePatientId" value="#{adminUsers.invitePatientId}">
+                <f:selectItem itemValue="#{null}" itemLabel="— none —"/>
+                <f:selectItems value="#{adminUsers.patients}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneMenu>
+              <span class="hint">Only used for patient portal accounts.</span>
+              <h:message for="invitePatientId" styleClass="error-text"/>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px">
+            <h:commandButton value="Send invitation" action="#{adminUsers.invite}"
+                             styleClass="btn btn--primary"/>
+          </div>
+        </h:form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>Accounts</h2>
+      </div>
+      <div class="card__body">
+        <h:form id="filterForm">
+          <div class="filters">
+            <div class="field">
+              <h:outputLabel for="roleFilter" value="Role"/>
+              <h:selectOneMenu id="roleFilter" value="#{adminUsers.roleFilter}">
+                <f:selectItem itemValue="" itemLabel="All roles"/>
+                <f:selectItems value="#{adminUsers.roles}" var="r"
+                               itemValue="#{r.code}" itemLabel="#{r.label}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="textFilter" value="Search"/>
+              <h:inputText id="textFilter" value="#{adminUsers.textFilter}"/>
+            </div>
+            <div class="btn-row">
+              <h:commandButton value="Search" action="#{adminUsers.load}"
+                               styleClass="btn btn--secondary"/>
+            </div>
+          </div>
+        </h:form>
+      </div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty adminUsers.filteredUsers}">
+            <clinic:emptyState title="No accounts match" hint="Try clearing the filters." mark="○"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Last login</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminUsers.filteredUsers}" var="u">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{u.fullName}"/></td>
+                      <td><h:outputText value="#{u.email}"/></td>
+                      <td><h:outputText value="#{u.role.label}"/></td>
+                      <td class="muted">
+                        <ui:fragment rendered="#{u.lastLoginAt ne null}">
+                            <h:outputText value="#{u.lastLoginAt}">
+                              <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                            </h:outputText>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (u.lastLoginAt ne null)}">Never</ui:fragment>
+                      </td>
+                      <td>
+                        <ui:fragment rendered="#{u.active}">
+                            <span class="badge badge--success">Active</span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (u.active)}">
+                            <span class="badge badge--neutral">Disabled</span>
+                          </ui:fragment>
+                      </td>
+                      <td class="actions">
+                        <h:form>
+                          <div class="btn-row btn-row--end">
+                            <ui:fragment rendered="#{u.role.code ne 'clinic_admin'}">
+                              <h:commandLink value="Make admin"
+                                             action="#{adminUsers.changeRole(u,'clinic_admin')}"
+                                             styleClass="btn btn--secondary btn--sm"/>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{u.role.code ne 'clinician'}">
+                              <h:commandLink value="Make clinician"
+                                             action="#{adminUsers.changeRole(u,'clinician')}"
+                                             styleClass="btn btn--secondary btn--sm"/>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{u.role.code ne 'front_desk'}">
+                              <h:commandLink value="Make front desk"
+                                             action="#{adminUsers.changeRole(u,'front_desk')}"
+                                             styleClass="btn btn--secondary btn--sm"/>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{u.role.code ne 'patient'}">
+                              <h:commandLink value="Make patient"
+                                             action="#{adminUsers.changeRole(u,'patient')}"
+                                             styleClass="btn btn--secondary btn--sm"/>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{u.lockedUntil ne null}">
+                              <h:commandLink value="Clear hold" action="#{adminUsers.clearHold(u)}"
+                                             styleClass="btn btn--secondary btn--sm"/>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{u.active}">
+                                <h:commandLink value="Disable" action="#{adminUsers.toggleEnabled(u)}"
+                                               styleClass="btn btn--danger btn--sm"/>
+                              </ui:fragment>
+                              <ui:fragment rendered="#{not (u.active)}">
+                                <h:commandLink value="Enable" action="#{adminUsers.toggleEnabled(u)}"
+                                               styleClass="btn btn--success btn--sm"/>
+                              </ui:fragment>
+                          </div>
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

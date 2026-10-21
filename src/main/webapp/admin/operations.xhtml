@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Operations</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Operations</h1>
+        <p>Scheduled jobs, the local email outbox and simulated webhook deliveries.</p>
+      </div>
+    </div>
+
+    <div class="panel-note mb-4">
+      No outbound network connection is made — email is written to a table and webhook deliveries
+      are recorded locally.
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Scheduled jobs</h2></div>
+      <div class="card__body">
+        <h:form id="jobsForm">
+          <div class="workflow-bar">
+            <span class="workflow-bar__label">Run on demand</span>
+            <ui:repeat value="#{adminOperations.jobNames}" var="j">
+              <h:commandButton value="Run #{j}" action="#{adminOperations.runJob(j)}"
+                               styleClass="btn btn--accent"/>
+            </ui:repeat>
+          </div>
+        </h:form>
+
+        <c:choose>
+          <c:when test="#{empty adminOperations.runs}">
+            <clinic:emptyState title="No job runs yet" hint="Run a job above." mark="○"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap" style="margin-top:16px">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Job name</th>
+                    <th scope="col">Started</th>
+                    <th scope="col">Finished</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Detail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{adminOperations.runs}" var="r">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{r.jobName}"/></td>
+                      <td class="nowrap">
+                        <h:outputText value="#{r.startedAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td class="nowrap">
+                        <ui:fragment rendered="#{r.finishedAt ne null}">
+                            <h:outputText value="#{r.finishedAt}">
+                              <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                            </h:outputText>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (r.finishedAt ne null)}">—</ui:fragment>
+                      </td>
+                      <td>
+                        <ui:fragment rendered="#{r.status eq 'succeeded'}">
+                            <span class="badge badge--success"><h:outputText value="#{r.status}"/></span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{r.status eq 'failed'}">
+                            <span class="badge badge--danger"><h:outputText value="#{r.status}"/></span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (r.status eq 'succeeded') and not (r.status eq 'failed')}">
+                            <span class="badge badge--info"><h:outputText value="#{r.status}"/></span>
+                          </ui:fragment>
+                      </td>
+                      <td class="muted"><h:outputText value="#{r.detail}"/></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <div class="grid grid--2">
+      <div class="card">
+        <div class="card__head"><h2>Email outbox (local mock)</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty adminOperations.outbox}">
+              <clinic:emptyState title="Outbox is empty" hint="" mark="○"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">To</th>
+                      <th scope="col">Subject</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Created</th>
+                      <th scope="col">Sent</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{adminOperations.outbox}" var="e">
+                      <tr>
+                        <td><h:outputText value="#{e.toAddress}"/></td>
+                        <td class="strong"><h:outputText value="#{e.subject}"/></td>
+                        <td>
+                          <ui:fragment rendered="#{e.status eq 'sent'}">
+                              <span class="badge badge--success"><h:outputText value="#{e.status}"/></span>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{e.status eq 'failed'}">
+                              <span class="badge badge--danger"><h:outputText value="#{e.status}"/></span>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not (e.status eq 'sent') and not (e.status eq 'failed')}">
+                              <span class="badge badge--info"><h:outputText value="#{e.status}"/></span>
+                            </ui:fragment>
+                        </td>
+                        <td class="muted nowrap">
+                          <h:outputText value="#{e.createdAt}">
+                            <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                        <td class="muted nowrap">
+                          <ui:fragment rendered="#{e.sentAt ne null}">
+                              <h:outputText value="#{e.sentAt}">
+                                <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                              </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not (e.sentAt ne null)}">—</ui:fragment>
+                        </td>
+                        <td class="actions">
+                          <h:form>
+                            <h:commandButton value="View" action="#{adminOperations.select(e)}"
+                                             styleClass="btn btn--secondary btn--sm"/>
+                          </h:form>
+                        </td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+          <c:if test="#{adminOperations.selectedEmail ne null}">
+            <div class="card__body">
+              <h4>Message body</h4>
+              <div class="code"><h:outputText value="#{adminOperations.selectedEmail.body}"/></div>
+            </div>
+          </c:if>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2>Webhook deliveries (local mock)</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty adminOperations.deliveries}">
+              <clinic:emptyState title="No deliveries yet" hint="" mark="○"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">Event type</th>
+                      <th scope="col">Endpoint</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Response code</th>
+                      <th scope="col">Attempts</th>
+                      <th scope="col">Created</th>
+                      <th scope="col">Delivered</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{adminOperations.deliveries}" var="d">
+                      <tr>
+                        <td class="strong"><h:outputText value="#{d.eventType}"/></td>
+                        <td><h:outputText value="#{d.endpoint.label}"/></td>
+                        <td>
+                          <ui:fragment rendered="#{d.status eq 'delivered'}">
+                              <span class="badge badge--success"><h:outputText value="#{d.status}"/></span>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{d.status eq 'failed'}">
+                              <span class="badge badge--danger"><h:outputText value="#{d.status}"/></span>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not (d.status eq 'delivered') and not (d.status eq 'failed')}">
+                              <span class="badge badge--info"><h:outputText value="#{d.status}"/></span>
+                            </ui:fragment>
+                        </td>
+                        <td><h:outputText value="#{d.responseCode}"/></td>
+                        <td><h:outputText value="#{d.attempts}"/></td>
+                        <td class="muted nowrap">
+                          <h:outputText value="#{d.createdAt}">
+                            <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                        <td class="muted nowrap">
+                          <ui:fragment rendered="#{d.deliveredAt ne null}">
+                              <h:outputText value="#{d.deliveredAt}">
+                                <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                              </h:outputText>
+                            </ui:fragment>
+                            <ui:fragment rendered="#{not (d.deliveredAt ne null)}">—</ui:fragment>
+                        </td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

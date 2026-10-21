@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Datasource deployment for the Clinic Patient Portal.
+
+  Credentials are NOT baked in: they are resolved from system properties that
+  the container entrypoint sets from environment variables, so no secret is
+  present in this file or in the image layers.
+-->
+<datasources xmlns="http://www.jboss.org/ironjacamar/schema"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="http://www.jboss.org/ironjacamar/schema
+                                 http://docs.jboss.org/ironjacamar/schema/datasources_1_2.xsd">
+
+  <datasource jndi-name="java:jboss/datasources/ClinicDS"
+              pool-name="ClinicDS"
+              enabled="true"
+              use-java-context="true"
+              statistics-enabled="false">
+    <connection-url>${clinic.db.url:jdbc:postgresql://postgres:5432/clinic_portal}</connection-url>
+    <driver>postgresql.jar</driver>
+    <transaction-isolation>TRANSACTION_READ_COMMITTED</transaction-isolation>
+    <pool>
+      <min-pool-size>5</min-pool-size>
+      <max-pool-size>40</max-pool-size>
+      <prefill>true</prefill>
+    </pool>
+    <security>
+      <user-name>${clinic.db.user:clinic_app}</user-name>
+      <password>${clinic.db.password:changeme}</password>
+    </security>
+    <validation>
+      <valid-connection-checker
+          class-name="org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLValidConnectionChecker"/>
+      <validate-on-match>false</validate-on-match>
+      <background-validation>true</background-validation>
+      <background-validation-millis>60000</background-validation-millis>
+      <exception-sorter
+          class-name="org.jboss.jca.adapters.jdbc.extensions.postgres.PostgreSQLExceptionSorter"/>
+    </validation>
+    <timeout>
+      <blocking-timeout-millis>30000</blocking-timeout-millis>
+      <idle-timeout-minutes>10</idle-timeout-minutes>
+    </timeout>
+  </datasource>
+</datasources>

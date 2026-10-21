@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">My profile</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>My profile</h1>
+        <p>Update your contact details and change your password.</p>
+      </div>
+    </div>
+
+    <div class="grid grid--2">
+      <div class="card">
+        <div class="card__head"><h2>Profile details</h2></div>
+        <div class="card__body">
+          <dl class="def">
+            <dt>Email</dt>
+            <dd><h:outputText value="#{profile.user.email}"/></dd>
+            <dt>Role</dt>
+            <dd><h:outputText value="#{profile.user.roleLabel}"/></dd>
+          </dl>
+
+          <h:form id="profileForm" style="margin-top:16px">
+            <div class="form-grid">
+              <div class="field">
+                <h:outputLabel for="fullName" value="Full name"/>
+                <h:inputText id="fullName" value="#{profile.fullName}" required="true"/>
+                <h:message for="fullName" styleClass="error-text"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="phone" value="Phone"/>
+                <h:inputText id="phone" value="#{profile.phone}"/>
+                <h:message for="phone" styleClass="error-text"/>
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:16px">
+              <h:commandButton value="Save profile" action="#{profile.saveProfile}"
+                               styleClass="btn btn--primary"/>
+            </div>
+          </h:form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h2>Change password</h2></div>
+        <div class="card__body">
+          <h:form id="passwordForm">
+            <div class="form-grid">
+              <div class="field">
+                <h:outputLabel for="currentPassword" value="Current password"/>
+                <h:inputSecret id="currentPassword" value="#{profile.currentPassword}"
+                                redisplay="false" autocomplete="current-password" required="true"/>
+                <h:message for="currentPassword" styleClass="error-text"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="newPassword" value="New password"/>
+                <h:inputSecret id="newPassword" value="#{profile.newPassword}"
+                                redisplay="false" autocomplete="new-password" required="true"/>
+                <span class="hint">At least 12 characters with upper case, lower case, a digit
+                   and a symbol.</span>
+                <h:message for="newPassword" styleClass="error-text"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="confirmPassword" value="Confirm new password"/>
+                <h:inputSecret id="confirmPassword" value="#{profile.confirmPassword}"
+                                redisplay="false" autocomplete="new-password" required="true"/>
+                <h:message for="confirmPassword" styleClass="error-text"/>
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top:16px">
+              <h:commandButton value="Change password" action="#{profile.changePassword}"
+                               styleClass="btn btn--primary"/>
+            </div>
+          </h:form>
+        </div>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

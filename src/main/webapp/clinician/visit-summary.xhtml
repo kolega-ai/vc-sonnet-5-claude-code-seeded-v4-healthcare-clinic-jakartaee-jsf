@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="metadata">
+    <f:metadata>
+    <f:viewParam name="id" value="#{visitSummaryEditor.summaryId}"/>
+    <f:viewAction action="#{visitSummaryEditor.load}"/>
+  </f:metadata>
+  </ui:define>
+
+  <ui:define name="title">Visit summary</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Visit summary</h1>
+        <p>Write and release a clinical visit summary.</p>
+      </div>
+    </div>
+
+    <div class="grid grid--split">
+      <div>
+        <div class="card">
+          <div class="card__head"><h2>My drafts</h2></div>
+          <div class="card__body card__body--flush">
+            <c:choose>
+              <c:when test="#{empty visitSummaryEditor.drafts}">
+                <clinic:emptyState title="No drafts" hint="Draft visit summaries you start will appear here." mark="📝"/>
+              </c:when>
+              <c:otherwise>
+                <ul class="thread-list">
+                  <ui:repeat value="#{visitSummaryEditor.drafts}" var="d">
+                    <li>
+                      <h:link outcome="/clinician/visit-summary">
+                        <f:param name="id" value="#{d.id}"/>
+                        <strong><h:outputText value="#{d.patient.fullName}"/></strong>
+                        <span>
+                          <h:outputText value="#{d.visitDate}">
+                            <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                          </h:outputText>
+                        </span>
+                      </h:link>
+                      <clinic:statusBadge status="#{d.status}"/>
+                    </li>
+                  </ui:repeat>
+                </ul>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <c:choose>
+          <c:when test="#{visitSummaryEditor.loaded}">
+            <div class="card">
+              <div class="card__head">
+                <h2>
+                  <h:outputText value="#{visitSummaryEditor.summary.patient.fullName}"/> ·
+                  <h:outputText value="#{visitSummaryEditor.summary.visitDate}">
+                    <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                  </h:outputText>
+                </h2>
+                <div class="card__actions">
+                  <clinic:statusBadge status="#{visitSummaryEditor.summary.status}"/>
+                </div>
+              </div>
+              <div class="card__body">
+                <div class="panel-note mb-4">
+                  A draft is invisible to the patient until it is released.
+                </div>
+
+                <h:form>
+                  <div class="form-grid mb-4">
+                    <div class="field field--wide">
+                      <h:outputLabel for="chiefComplaint" value="Chief complaint"/>
+                      <h:inputText id="chiefComplaint" value="#{visitSummaryEditor.chiefComplaint}"/>
+                      <h:message for="chiefComplaint" styleClass="error-text"/>
+                    </div>
+                    <div class="field field--wide">
+                      <h:outputLabel for="diagnosis" value="Assessment"/>
+                      <h:inputTextarea id="diagnosis" value="#{visitSummaryEditor.diagnosis}"/>
+                      <h:message for="diagnosis" styleClass="error-text"/>
+                    </div>
+                    <div class="field field--wide">
+                      <h:outputLabel for="careInstructions" value="Care instructions — the patient will read this"/>
+                      <h:inputTextarea id="careInstructions" value="#{visitSummaryEditor.careInstructions}"/>
+                      <h:message for="careInstructions" styleClass="error-text"/>
+                    </div>
+                    <div class="field field--wide">
+                      <h:outputLabel for="followUpAdvice" value="Follow-up advice"/>
+                      <h:inputText id="followUpAdvice" value="#{visitSummaryEditor.followUpAdvice}"/>
+                      <h:message for="followUpAdvice" styleClass="error-text"/>
+                    </div>
+                  </div>
+
+                  <div class="card mb-4" style="border-color:var(--accent-100)">
+                    <div class="card__head">
+                      <h3>Clinician notes</h3>
+                      <div class="card__actions">
+                        <span class="tag tag--internal">Internal — never shown to the patient</span>
+                      </div>
+                    </div>
+                    <div class="card__body">
+                      <div class="field field--wide">
+                        <h:outputLabel for="clinicianNotes" value="Notes"/>
+                        <h:inputTextarea id="clinicianNotes" value="#{visitSummaryEditor.clinicianNotes}"/>
+                        <h:message for="clinicianNotes" styleClass="error-text"/>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="btn-row mb-4">
+                    <h:commandButton value="Save draft" action="#{visitSummaryEditor.save}" styleClass="btn btn--secondary"/>
+                  </div>
+                </h:form>
+
+                <c:if test="#{visitSummaryEditor.releasable}">
+                  <h:form>
+                    <div class="workflow-bar">
+                      <span class="workflow-bar__label">Release</span>
+                      <h:commandButton value="Release to patient" action="#{visitSummaryEditor.release}" styleClass="btn btn--success"/>
+                    </div>
+                  </h:form>
+                </c:if>
+
+                <c:if test="#{visitSummaryEditor.amendable}">
+                  <div class="divider"/>
+                  <h:form>
+                    <div class="field field--wide mb-4">
+                      <h:outputLabel for="amendReason" value="Reason for amendment"/>
+                      <h:inputText id="amendReason" value="#{visitSummaryEditor.amendReason}"/>
+                      <h:message for="amendReason" styleClass="error-text"/>
+                    </div>
+                    <h:commandButton value="Amend released summary" action="#{visitSummaryEditor.amend}" styleClass="btn btn--accent"/>
+                  </h:form>
+                </c:if>
+              </div>
+            </div>
+          </c:when>
+          <c:otherwise>
+            <div class="card">
+              <div class="card__body">
+                <clinic:emptyState title="No summary selected" hint="Choose a draft on the left, or start one from a patient's chart." mark="📝"/>
+              </div>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

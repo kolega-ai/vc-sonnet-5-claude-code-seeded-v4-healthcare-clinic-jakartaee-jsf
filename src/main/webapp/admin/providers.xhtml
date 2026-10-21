@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Providers &amp; schedules</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Providers &amp; schedules</h1>
+        <p>Manage the clinician directory, weekly schedule blocks and appointment types.</p>
+      </div>
+    </div>
+
+    <div class="grid grid--split">
+      <div>
+        <div class="card">
+          <div class="card__head"><h2>Add or edit a provider</h2></div>
+          <div class="card__body">
+            <h:form id="providerForm">
+              <div class="form-grid">
+                <div class="field">
+                  <h:outputLabel for="firstName" value="First name"/>
+                  <h:inputText id="firstName" value="#{adminProviders.providerForm.firstName}" required="true"/>
+                  <h:message for="firstName" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="lastName" value="Last name"/>
+                  <h:inputText id="lastName" value="#{adminProviders.providerForm.lastName}" required="true"/>
+                  <h:message for="lastName" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="specialty" value="Specialty"/>
+                  <h:inputText id="specialty" value="#{adminProviders.providerForm.specialty}"/>
+                  <h:message for="specialty" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="credentials" value="Credentials"/>
+                  <h:inputText id="credentials" value="#{adminProviders.providerForm.credentials}"/>
+                  <h:message for="credentials" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="room" value="Room"/>
+                  <h:inputText id="room" value="#{adminProviders.providerForm.room}"/>
+                  <h:message for="room" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="npi" value="NPI"/>
+                  <h:inputText id="npi" value="#{adminProviders.providerForm.npi}"/>
+                  <h:message for="npi" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <label class="check">
+                    <h:selectBooleanCheckbox id="active" value="#{adminProviders.providerForm.active}"/>
+                    <h:outputLabel for="active" value="Active"/>
+                  </label>
+                  <h:message for="active" styleClass="error-text"/>
+                </div>
+              </div>
+              <div class="btn-row" style="margin-top:16px">
+                <h:commandButton value="Save provider" action="#{adminProviders.saveProvider}"
+                                 styleClass="btn btn--primary"/>
+                <h:commandButton value="New" action="#{adminProviders.newProvider}"
+                                 immediate="true" styleClass="btn btn--secondary"/>
+              </div>
+            </h:form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Add a schedule block</h2></div>
+          <div class="card__body">
+            <h:form id="scheduleForm">
+              <div class="form-grid">
+                <div class="field">
+                  <h:outputLabel for="scheduleProviderId" value="Provider"/>
+                  <h:selectOneMenu id="scheduleProviderId" value="#{adminProviders.scheduleProviderId}">
+                    <f:selectItems value="#{adminProviders.providers}" var="p"
+                                   itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+                  </h:selectOneMenu>
+                  <h:message for="scheduleProviderId" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="scheduleDay" value="Day"/>
+                  <h:selectOneMenu id="scheduleDay" value="#{adminProviders.scheduleDay}">
+                    <f:selectItems value="#{adminProviders.dayOptions.entrySet().toArray()}" var="d"
+                                   itemValue="#{d.key}" itemLabel="#{d.value}"/>
+                  </h:selectOneMenu>
+                  <h:message for="scheduleDay" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="scheduleStart" value="Start time"/>
+                  <h:inputText id="scheduleStart" value="#{adminProviders.scheduleStart}">
+                    <f:convertDateTime type="localTime" pattern="HH:mm"/>
+                  </h:inputText>
+                  <h:message for="scheduleStart" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="scheduleEnd" value="End time"/>
+                  <h:inputText id="scheduleEnd" value="#{adminProviders.scheduleEnd}">
+                    <f:convertDateTime type="localTime" pattern="HH:mm"/>
+                  </h:inputText>
+                  <h:message for="scheduleEnd" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="scheduleSlotMinutes" value="Slot length (minutes)"/>
+                  <h:inputText id="scheduleSlotMinutes" value="#{adminProviders.scheduleSlotMinutes}"/>
+                  <h:message for="scheduleSlotMinutes" styleClass="error-text"/>
+                </div>
+              </div>
+              <div class="btn-row" style="margin-top:16px">
+                <h:commandButton value="Add block" action="#{adminProviders.addSchedule}"
+                                 styleClass="btn btn--primary"/>
+              </div>
+            </h:form>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <div class="card__head"><h2>Providers</h2></div>
+          <div class="card__body">
+            <c:choose>
+              <c:when test="#{empty adminProviders.providers}">
+                <clinic:emptyState title="No providers yet" hint="Add one on the left." mark="○"/>
+              </c:when>
+              <c:otherwise>
+                <ui:repeat value="#{adminProviders.providers}" var="p">
+                  <div class="card" style="box-shadow:none;border-color:var(--line-200)">
+                    <div class="card__head">
+                      <h3><h:outputText value="#{p.displayName}"/></h3>
+                      <div class="card__actions">
+                        <ui:fragment rendered="#{p.active}">
+                            <span class="badge badge--success">Active</span>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (p.active)}">
+                            <span class="badge badge--neutral">Inactive</span>
+                          </ui:fragment>
+                        <h:form>
+                          <h:commandButton value="Edit" action="#{adminProviders.editProvider(p)}"
+                                           styleClass="btn btn--secondary btn--sm"/>
+                        </h:form>
+                      </div>
+                    </div>
+                    <div class="card__body">
+                      <dl class="def">
+                        <dt>Specialty</dt><dd><h:outputText value="#{p.specialty}"/></dd>
+                        <dt>NPI</dt><dd><h:outputText value="#{p.npi}"/></dd>
+                        <dt>Room</dt><dd><h:outputText value="#{p.room}"/></dd>
+                      </dl>
+                      <ui:fragment rendered="#{empty adminProviders.schedulesFor(p)}">
+                          <p class="muted small mb-0">No schedule blocks.</p>
+                        </ui:fragment>
+                        <ui:fragment rendered="#{not (empty adminProviders.schedulesFor(p))}">
+                          <div class="table-wrap">
+                            <table class="data">
+                              <thead>
+                                <tr>
+                                  <th scope="col">Day</th>
+                                  <th scope="col">Start</th>
+                                  <th scope="col">End</th>
+                                  <th scope="col">Slot</th>
+                                  <th scope="col">Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <ui:repeat value="#{adminProviders.schedulesFor(p)}" var="s">
+                                  <tr>
+                                    <td><h:outputText value="#{s.dayName}"/></td>
+                                    <td>
+                                      <h:outputText value="#{s.startTime}">
+                                        <f:convertDateTime type="localTime" pattern="HH:mm"/>
+                                      </h:outputText>
+                                    </td>
+                                    <td>
+                                      <h:outputText value="#{s.endTime}">
+                                        <f:convertDateTime type="localTime" pattern="HH:mm"/>
+                                      </h:outputText>
+                                    </td>
+                                    <td><h:outputText value="#{s.slotMinutes}"/> min</td>
+                                    <td class="actions">
+                                      <h:form>
+                                        <h:commandButton value="Remove" action="#{adminProviders.removeSchedule(s)}"
+                                                         styleClass="btn btn--danger btn--sm"/>
+                                      </h:form>
+                                    </td>
+                                  </tr>
+                                </ui:repeat>
+                              </tbody>
+                            </table>
+                          </div>
+                        </ui:fragment>
+                    </div>
+                  </div>
+                </ui:repeat>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h2>Appointment types</h2></div>
+          <div class="card__body">
+            <h:form id="typeForm">
+              <div class="form-grid form-grid--3">
+                <div class="field">
+                  <h:outputLabel for="typeCode" value="Code"/>
+                  <h:inputText id="typeCode" value="#{adminProviders.typeForm.code}" required="true"/>
+                  <h:message for="typeCode" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="typeName" value="Name"/>
+                  <h:inputText id="typeName" value="#{adminProviders.typeForm.name}" required="true"/>
+                  <h:message for="typeName" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="typeDuration" value="Duration (minutes)"/>
+                  <h:inputText id="typeDuration" value="#{adminProviders.typeForm.durationMinutes}"/>
+                  <h:message for="typeDuration" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="typeColor" value="Color"/>
+                  <h:inputText id="typeColor" value="#{adminProviders.typeForm.color}"/>
+                  <h:message for="typeColor" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <label class="check">
+                    <h:selectBooleanCheckbox id="typeBookable" value="#{adminProviders.typeForm.patientBookable}"/>
+                    <h:outputLabel for="typeBookable" value="Patient bookable"/>
+                  </label>
+                </div>
+                <div class="field">
+                  <label class="check">
+                    <h:selectBooleanCheckbox id="typeActive" value="#{adminProviders.typeForm.active}"/>
+                    <h:outputLabel for="typeActive" value="Active"/>
+                  </label>
+                </div>
+              </div>
+              <div class="btn-row" style="margin-top:16px">
+                <h:commandButton value="Save type" action="#{adminProviders.saveType}"
+                                 styleClass="btn btn--primary"/>
+                <h:commandButton value="New" action="#{adminProviders.newAppointmentType}"
+                                 immediate="true" styleClass="btn btn--secondary"/>
+              </div>
+            </h:form>
+
+            <c:choose>
+              <c:when test="#{empty adminProviders.types}">
+                <clinic:emptyState title="No appointment types" hint="Add one above." mark="○"/>
+              </c:when>
+              <c:otherwise>
+                <div class="table-wrap" style="margin-top:16px">
+                  <table class="data">
+                    <thead>
+                      <tr>
+                        <th scope="col">Code</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Duration</th>
+                        <th scope="col">Patient bookable</th>
+                        <th scope="col">Active</th>
+                        <th scope="col">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <ui:repeat value="#{adminProviders.types}" var="t">
+                        <tr>
+                          <td class="strong"><h:outputText value="#{t.code}"/></td>
+                          <td><h:outputText value="#{t.name}"/></td>
+                          <td><h:outputText value="#{t.durationMinutes}"/> min</td>
+                          <td>
+                            <ui:fragment rendered="#{t.patientBookable}">
+                                <span class="badge badge--success">Yes</span>
+                              </ui:fragment>
+                              <ui:fragment rendered="#{not (t.patientBookable)}">
+                                <span class="badge badge--neutral">No</span>
+                              </ui:fragment>
+                          </td>
+                          <td>
+                            <ui:fragment rendered="#{t.active}">
+                                <span class="badge badge--success">Active</span>
+                              </ui:fragment>
+                              <ui:fragment rendered="#{not (t.active)}">
+                                <span class="badge badge--neutral">Inactive</span>
+                              </ui:fragment>
+                          </td>
+                          <td class="actions">
+                            <h:form>
+                              <h:commandButton value="Edit" action="#{adminProviders.editType(t)}"
+                                               styleClass="btn btn--secondary btn--sm"/>
+                            </h:form>
+                          </td>
+                        </tr>
+                      </ui:repeat>
+                    </tbody>
+                  </table>
+                </div>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

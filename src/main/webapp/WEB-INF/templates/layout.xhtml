@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:h="jakarta.faces.html"
+      xmlns:f="jakarta.faces.core"
+      xmlns:ui="jakarta.faces.facelets"
+      xmlns:c="jakarta.tags.core"
+      lang="en">
+<h:head>
+  <f:facet name="first">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <meta name="robots" content="noindex, nofollow"/>
+  </f:facet>
+  <title><ui:insert name="title">Dashboard</ui:insert> · #{layout.clinicName}</title>
+  <!-- The ?v= suffix is a cache-busting token from AssetVersion (non-cryptographic). -->
+  <link rel="stylesheet"
+        href="#{request.contextPath}/resources/css/clinic.css?v=#{layout.assetSuffix}"/>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f4c52'/%3E%3Cpath d='M14 7h4v7h7v4h-7v7h-4v-7H7v-4h7z' fill='white'/%3E%3C/svg%3E"/>
+</h:head>
+
+<h:body>
+  <!-- View parameters and view actions belong here so JSF can build the
+       metadata facet without building the whole page. -->
+  <ui:insert name="metadata"/>
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+
+  <div class="app">
+
+    <!-- ============================ sidebar ============================ -->
+    <nav class="sidebar" aria-label="Primary">
+      <div class="sidebar__brand">
+        <span class="sidebar__mark" aria-hidden="true">NG</span>
+        <h:link outcome="#{layout.homePath}">
+          <span class="sidebar__name">#{layout.clinicName}</span>
+          <span class="sidebar__sub">Patient portal</span>
+        </h:link>
+      </div>
+
+      <div class="sidebar__nav">
+        <c:if test="#{layout.user.role.code eq 'patient'}">
+          <div class="sidebar__section">My care</div>
+          <h:link outcome="/patient/dashboard" styleClass="sidebar__link #{view.viewId.contains('/patient/dashboard') ? 'is-active' : ''}">Dashboard</h:link>
+          <h:link outcome="/patient/appointments" styleClass="sidebar__link #{view.viewId.contains('/patient/appointments') ? 'is-active' : ''}">Appointments</h:link>
+          <h:link outcome="/patient/visit-summaries" styleClass="sidebar__link #{view.viewId.contains('/patient/visit-summaries') ? 'is-active' : ''}">Visit summaries</h:link>
+          <h:link outcome="/patient/prescriptions" styleClass="sidebar__link #{view.viewId.contains('/patient/prescriptions') ? 'is-active' : ''}">Prescriptions</h:link>
+          <div class="sidebar__section">Contact</div>
+          <h:link outcome="/patient/messages" styleClass="sidebar__link #{view.viewId.contains('/patient/messages') ? 'is-active' : ''}">Messages</h:link>
+          <h:link outcome="/patient/documents" styleClass="sidebar__link #{view.viewId.contains('/patient/documents') ? 'is-active' : ''}">Forms &amp; documents</h:link>
+        </c:if>
+
+        <c:if test="#{layout.user.staff}">
+          <div class="sidebar__section">Clinic</div>
+          <h:link outcome="#{layout.homePath}" styleClass="sidebar__link #{view.viewId.contains('dashboard') ? 'is-active' : ''}">Dashboard</h:link>
+          <h:link outcome="/staff/schedule" styleClass="sidebar__link #{view.viewId.contains('/staff/schedule') ? 'is-active' : ''}">Schedule board</h:link>
+          <h:link outcome="/staff/patients" styleClass="sidebar__link #{view.viewId.contains('/staff/patients') ? 'is-active' : ''}">Patients</h:link>
+          <h:link outcome="/staff/messages" styleClass="sidebar__link #{view.viewId.contains('/staff/messages') ? 'is-active' : ''}">Messages</h:link>
+          <h:link outcome="/staff/documents" styleClass="sidebar__link #{view.viewId.contains('/staff/documents') ? 'is-active' : ''}">Form review</h:link>
+        </c:if>
+
+        <c:if test="#{layout.user.clinician}">
+          <div class="sidebar__section">Clinical</div>
+          <h:link outcome="/clinician/refill-queue" styleClass="sidebar__link #{view.viewId.contains('refill-queue') ? 'is-active' : ''}">Refill queue</h:link>
+          <h:link outcome="/clinician/visit-summary" styleClass="sidebar__link #{view.viewId.contains('visit-summary') ? 'is-active' : ''}">Visit summaries</h:link>
+        </c:if>
+
+        <c:if test="#{layout.user.clinicAdmin}">
+          <div class="sidebar__section">Administration</div>
+          <h:link outcome="/admin/users" styleClass="sidebar__link #{view.viewId.contains('/admin/users') ? 'is-active' : ''}">Staff &amp; accounts</h:link>
+          <h:link outcome="/admin/providers" styleClass="sidebar__link #{view.viewId.contains('/admin/providers') ? 'is-active' : ''}">Providers &amp; schedules</h:link>
+          <h:link outcome="/admin/import-export" styleClass="sidebar__link #{view.viewId.contains('import-export') ? 'is-active' : ''}">Import &amp; export</h:link>
+          <h:link outcome="/admin/audit" styleClass="sidebar__link #{view.viewId.contains('/admin/audit') ? 'is-active' : ''}">Audit log</h:link>
+          <h:link outcome="/admin/operations" styleClass="sidebar__link #{view.viewId.contains('/admin/operations') ? 'is-active' : ''}">Operations</h:link>
+          <h:link outcome="/admin/settings" styleClass="sidebar__link #{view.viewId.contains('/admin/settings') ? 'is-active' : ''}">Clinic settings</h:link>
+        </c:if>
+
+        <div class="sidebar__section">Account</div>
+        <h:link outcome="/account/profile" styleClass="sidebar__link #{view.viewId.contains('/account/profile') ? 'is-active' : ''}">My profile</h:link>
+      </div>
+
+      <div class="sidebar__foot">
+        <div>#{layout.clinicAddress}</div>
+        <div>#{layout.clinicPhone}</div>
+      </div>
+    </nav>
+
+    <!-- ============================== main ============================= -->
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <div class="topbar__title"><ui:insert name="title">Dashboard</ui:insert></div>
+          <div class="topbar__meta">#{layout.today}</div>
+        </div>
+
+        <div class="topbar__spacer"></div>
+
+        <h:form id="bellForm" styleClass="bell">
+          <button type="button" id="notification-trigger" class="btn btn--secondary btn--sm"
+                  aria-expanded="false" aria-controls="notification-panel">
+            Notifications
+            <c:if test="#{layout.unreadNotifications gt 0}">
+              <span class="bell__count">#{layout.unreadNotifications}</span>
+              <span class="visually-hidden">#{layout.unreadNotifications} unread</span>
+            </c:if>
+          </button>
+          <div class="popover" id="notification-panel" hidden="hidden" role="region"
+               aria-label="Notifications">
+            <div class="popover__head">
+              <span>Notifications</span>
+              <h:commandLink value="Mark all read" action="#{layout.markAllRead}"
+                             styleClass="small"/>
+            </div>
+            <div class="popover__list">
+              <ui:repeat value="#{layout.recentNotifications}" var="n">
+                <h:link outcome="#{n.link ne null ? n.link : layout.homePath}"
+                        styleClass="popover__item #{n.readAt eq null ? 'is-unread' : ''}">
+                  <strong>#{n.title}</strong>
+                  <span>#{n.body}</span>
+                </h:link>
+                <c:if test="#{n.readAt eq null}">
+                  <h:outputLink value="#{layout.seenUrl(n)}" styleClass="small muted">
+                    Mark read
+                  </h:outputLink>
+                </c:if>
+              </ui:repeat>
+              <c:if test="#{empty layout.recentNotifications}">
+                <div class="popover__item"><span>No notifications yet.</span></div>
+              </c:if>
+            </div>
+          </div>
+        </h:form>
+
+        <div class="topbar__user">
+          <span class="avatar" aria-hidden="true">#{layout.user.initials}</span>
+          <span>
+            <span class="topbar__name">#{layout.user.displayName}</span>
+            <span class="topbar__role">#{layout.user.roleLabel}</span>
+          </span>
+          <h:form>
+            <h:commandLink value="Sign out" action="#{loginBean.logout}"
+                           styleClass="btn btn--secondary btn--sm"/>
+          </h:form>
+        </div>
+      </header>
+
+      <main class="content" id="main-content">
+        <ui:insert name="messages">
+          <h:messages id="globalMessages" globalOnly="true" styleClass="messages"
+                      infoClass="info" warnClass="warn" errorClass="error" fatalClass="fatal"
+                      layout="list"/>
+        </ui:insert>
+
+        <ui:insert name="content"/>
+      </main>
+    </div>
+  </div>
+
+  <script src="#{request.contextPath}/resources/js/clinic.js?v=#{layout.assetSuffix}"></script>
+</h:body>
+</html>

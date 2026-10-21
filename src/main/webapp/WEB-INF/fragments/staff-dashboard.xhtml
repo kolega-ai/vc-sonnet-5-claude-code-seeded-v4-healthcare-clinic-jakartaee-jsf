@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic">
+
+  <!-- ============================ summary tiles =========================== -->
+  <div class="grid grid--4" style="margin-bottom:24px">
+    <div class="stat stat--brand">
+      <span class="stat__label">Appointments today</span>
+      <span class="stat__value">#{staffDashboard.appointmentsToday}</span>
+      <span class="stat__hint">Across the whole clinic</span>
+    </div>
+    <div class="stat stat--info">
+      <span class="stat__label">Checked in now</span>
+      <span class="stat__value">#{staffDashboard.checkedIn}</span>
+      <span class="stat__hint">Waiting or in a room</span>
+    </div>
+    <div class="stat #{staffDashboard.formsAwaitingReview gt 0 ? 'stat--warning' : ''}">
+      <span class="stat__label">Forms awaiting review</span>
+      <span class="stat__value">#{staffDashboard.formsAwaitingReview}</span>
+      <span class="stat__hint">Uploaded by patients</span>
+    </div>
+    <div class="stat stat--success">
+      <span class="stat__label">Open messages</span>
+      <span class="stat__value">#{staffDashboard.openThreads}</span>
+      <span class="stat__hint">Conversations needing a reply</span>
+    </div>
+  </div>
+
+  <div class="grid grid--sidebar">
+    <div>
+
+      <!-- ============================ today's schedule ============================ -->
+      <div class="card">
+        <div class="card__head">
+          <h2>Today's schedule</h2>
+          <div class="card__actions">
+            <h:link outcome="/staff/schedule" value="Open schedule board"
+                    styleClass="btn btn--secondary btn--sm"/>
+          </div>
+        </div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty staffDashboard.todaysSchedule}">
+              <clinic:emptyState title="Nothing on the schedule"
+                                 hint="Appointments booked for today will appear here."
+                                 mark="📅"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">Time</th>
+                      <th scope="col">Patient</th>
+                      <th scope="col">Visit type</th>
+                      <th scope="col">Clinician</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{staffDashboard.todaysSchedule}" var="appt">
+                      <tr>
+                        <td class="strong">
+                          <h:outputText value="#{appt.startAt}">
+                            <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                        <td>
+                          <h:outputText value="#{appt.patient.fullName}"/>
+                          <div class="muted small"><h:outputText value="#{appt.patient.mrn}"/></div>
+                        </td>
+                        <td><h:outputText value="#{appt.appointmentType.name}"/></td>
+                        <td><h:outputText value="#{appt.provider.displayName}"/></td>
+                        <td><clinic:statusBadge status="#{appt.status}"/></td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+
+      <!-- ========================= appointment requests ========================= -->
+      <div class="card">
+        <div class="card__head">
+          <h2>Appointment requests</h2>
+          <div class="card__actions">
+            <h:link outcome="/staff/schedule" value="Manage requests"
+                    styleClass="btn btn--secondary btn--sm"/>
+          </div>
+        </div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty staffDashboard.pendingRequests}">
+              <clinic:emptyState title="No pending requests"
+                                 hint="Requests waiting for confirmation will appear here."
+                                 mark="📥"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">When</th>
+                      <th scope="col">Patient</th>
+                      <th scope="col">Visit type</th>
+                      <th scope="col">Clinician</th>
+                      <th scope="col">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{staffDashboard.pendingRequests}" var="req">
+                      <tr>
+                        <td class="strong">
+                          <h:outputText value="#{req.startAt}">
+                            <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                        <td>
+                          <h:outputText value="#{req.patient.fullName}"/>
+                          <div class="muted small"><h:outputText value="#{req.patient.mrn}"/></div>
+                        </td>
+                        <td><h:outputText value="#{req.appointmentType.name}"/></td>
+                        <td><h:outputText value="#{req.provider.displayName}"/></td>
+                        <td><clinic:statusBadge status="#{req.status}"/></td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================== aside ============================== -->
+    <div>
+      <div class="card">
+        <div class="card__head"><h3>Forms awaiting review</h3></div>
+        <div class="card__body">
+          <c:choose>
+            <c:when test="#{empty staffDashboard.reviewQueue}">
+              <p class="muted small mb-0">Nothing waiting for review.</p>
+            </c:when>
+            <c:otherwise>
+              <ul class="timeline">
+                <ui:repeat value="#{staffDashboard.reviewQueue}" var="d">
+                  <li>
+                    <div class="timeline__what"><h:outputText value="#{d.title}"/></div>
+                    <div class="timeline__when">
+                      <h:outputText value="#{d.patient.fullName}"/> ·
+                      <h:outputText value="#{d.createdAt}">
+                        <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                      </h:outputText>
+                    </div>
+                    <clinic:statusBadge status="#{d.status}"/>
+                  </li>
+                </ui:repeat>
+              </ul>
+            </c:otherwise>
+          </c:choose>
+          <h:link outcome="/staff/documents" value="Open form review"
+                  styleClass="btn btn--primary btn--sm btn--block"
+                  style="margin-top:12px"/>
+        </div>
+      </div>
+
+      <c:if test="#{not empty staffDashboard.refillQueue}">
+        <div class="card">
+          <div class="card__head"><h3>Refill queue</h3></div>
+          <div class="card__body">
+            <ul class="timeline">
+              <ui:repeat value="#{staffDashboard.refillQueue}" var="r">
+                <li>
+                  <div class="timeline__what">
+                    <h:outputText value="#{r.prescription.medicationName}"/>
+                  </div>
+                  <div class="timeline__when">
+                    <h:outputText value="#{r.patient.fullName}"/> ·
+                    <h:outputText value="#{r.requestedAt}">
+                      <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                    </h:outputText>
+                  </div>
+                  <clinic:statusBadge status="#{r.status}"/>
+                </li>
+              </ui:repeat>
+            </ul>
+            <h:link outcome="/clinician/refill-queue" value="Open refill queue"
+                    styleClass="btn btn--secondary btn--sm btn--block"
+                    style="margin-top:12px"/>
+          </div>
+        </div>
+      </c:if>
+
+      <div class="card">
+        <div class="card__head"><h3>My draft visit summaries</h3></div>
+        <div class="card__body">
+          <c:choose>
+            <c:when test="#{empty staffDashboard.myDrafts}">
+              <clinic:emptyState title="No drafts in progress"
+                                 hint="Draft summaries you start will appear here."
+                                 mark="📝"/>
+            </c:when>
+            <c:otherwise>
+              <ul class="timeline">
+                <ui:repeat value="#{staffDashboard.myDrafts}" var="d">
+                  <li>
+                    <div class="timeline__what">
+                      <h:link outcome="/clinician/visit-summary">
+                        <f:param name="id" value="#{d.id}"/>
+                        <h:outputText value="#{d.patient.fullName}"/>
+                      </h:link>
+                    </div>
+                    <div class="timeline__when">
+                      <h:outputText value="#{d.visitDate}">
+                        <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                      </h:outputText>
+                    </div>
+                    <clinic:statusBadge status="#{d.status}"/>
+                  </li>
+                </ui:repeat>
+              </ul>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+    </div>
+  </div>
+</ui:composition>

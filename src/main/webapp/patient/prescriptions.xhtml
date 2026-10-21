@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">My prescriptions</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>My prescriptions</h1>
+        <p>Review your medications and request refills online.</p>
+      </div>
+    </div>
+
+    <c:if test="#{patientPrescriptions.refillTargetId ne null}">
+      <div class="card">
+        <div class="card__head"><h3>Request a refill</h3></div>
+        <div class="card__body">
+          <div class="workflow-bar" style="margin-bottom:16px">
+            <span class="workflow-bar__label">Refill request</span>
+            <span>Add any note for your clinician, then send your request.</span>
+          </div>
+          <h:form id="refillForm">
+            <div class="field field--wide">
+              <h:outputLabel for="refillNote" value="Note for your clinician (optional)"/>
+              <h:inputTextarea id="refillNote" value="#{patientPrescriptions.refillNote}"/>
+              <h:message for="refillNote" styleClass="error-text"/>
+            </div>
+            <div class="btn-row" style="margin-top:12px">
+              <h:commandButton value="Send request" action="#{patientPrescriptions.requestRefill}"
+                                styleClass="btn btn--primary"/>
+              <h:commandButton value="Cancel" immediate="true" styleClass="btn btn--secondary">
+                <f:setPropertyActionListener target="#{patientPrescriptions.refillTargetId}"
+                                              value="#{null}"/>
+              </h:commandButton>
+            </div>
+          </h:form>
+        </div>
+      </div>
+    </c:if>
+
+    <div class="card">
+      <div class="card__head"><h2>My medications</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty patientPrescriptions.prescriptions}">
+            <clinic:emptyState title="No prescriptions on file"
+                                hint="Medications your clinician prescribes will appear here."
+                                mark="💊"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Medication</th>
+                    <th scope="col">Dosage</th>
+                    <th scope="col">Instructions</th>
+                    <th scope="col">Quantity</th>
+                    <th scope="col">Refills remaining</th>
+                    <th scope="col">Issued</th>
+                    <th scope="col">Expires</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientPrescriptions.prescriptions}" var="rx">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{rx.medicationName}"/></td>
+                      <td><h:outputText value="#{rx.dosage}"/></td>
+                      <td class="muted"><h:outputText value="#{rx.instructions}"/></td>
+                      <td><h:outputText value="#{rx.quantity}"/></td>
+                      <td><h:outputText value="#{rx.refillsRemaining}"/></td>
+                      <td>
+                        <h:outputText value="#{rx.issuedAt}">
+                          <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                      </td>
+                      <td>
+                        <h:outputText value="#{rx.expiresAt}">
+                          <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                      </td>
+                      <td><clinic:statusBadge status="#{rx.status}"/></td>
+                      <td class="actions">
+                        <ui:fragment rendered="#{patientPrescriptions.isRefillable(rx)}">
+                            <h:form>
+                              <h:commandButton value="Request refill"
+                                                action="#{patientPrescriptions.prepareRefill(rx)}"
+                                                styleClass="btn btn--primary btn--sm"/>
+                            </h:form>
+                          </ui:fragment>
+                          <ui:fragment rendered="#{not (patientPrescriptions.isRefillable(rx))}">
+                            <span class="muted small">Not eligible for refill</span>
+                          </ui:fragment>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Refill requests</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty patientPrescriptions.refills}">
+            <clinic:emptyState title="No refill requests"
+                                hint="Requests you send will show up here with their status."
+                                mark="🔄"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Medication</th>
+                    <th scope="col">Requested</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Your note</th>
+                    <th scope="col">Clinic note</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientPrescriptions.refills}" var="r">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{r.prescription.medicationName}"/></td>
+                      <td>
+                        <h:outputText value="#{r.requestedAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td><clinic:statusBadge status="#{r.status}"/></td>
+                      <td class="muted"><h:outputText value="#{r.patientNote}"/></td>
+                      <td class="muted"><h:outputText value="#{r.staffNote}"/></td>
+                      <td class="actions">
+                        <ui:fragment rendered="#{r.status.open}">
+                          <h:form>
+                            <h:commandButton value="Withdraw" action="#{patientPrescriptions.cancelRefill(r)}"
+                                              styleClass="btn btn--danger btn--sm"/>
+                          </h:form>
+                        </ui:fragment>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+  </ui:define>
+</ui:composition>

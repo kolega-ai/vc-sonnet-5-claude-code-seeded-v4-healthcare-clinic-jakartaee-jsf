@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Schedule board</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Schedule board</h1>
+        <p>Manage today's appointments, confirmations and rebooking.</p>
+      </div>
+      <div class="page-head__actions">
+        <h:outputLink value="#{scheduleBoard.scheduleExportUrl()}" styleClass="btn btn--secondary">
+          Export week (CSV)
+        </h:outputLink>
+      </div>
+    </div>
+
+    <!-- =============================== filters =============================== -->
+    <div class="card">
+      <div class="card__body">
+        <h:form id="filterForm">
+          <div class="filters">
+            <div class="field">
+              <h:outputLabel for="day" value="Day"/>
+              <h:inputText id="day" value="#{scheduleBoard.day}">
+                <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+              </h:inputText>
+              <h:message for="day" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="provider" value="Provider"/>
+              <h:selectOneMenu id="provider" value="#{scheduleBoard.providerFilter}">
+                <f:selectItem itemLabel="All providers" itemValue="#{null}"/>
+                <f:selectItems value="#{scheduleBoard.providers}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="status" value="Status"/>
+              <h:selectOneMenu id="status" value="#{scheduleBoard.statusFilter}">
+                <f:selectItem itemLabel="All statuses" itemValue="#{null}"/>
+                <f:selectItems value="#{scheduleBoard.allStatuses}" var="s"
+                               itemValue="#{s.code}" itemLabel="#{s.label}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="text" value="Patient name or MRN"/>
+              <h:inputText id="text" value="#{scheduleBoard.textFilter}"/>
+            </div>
+            <div class="btn-row">
+              <h:commandButton value="Search" action="#{scheduleBoard.search}" styleClass="btn btn--primary"/>
+              <h:commandButton value="Reset" action="#{scheduleBoard.resetFilters}" styleClass="btn btn--secondary"/>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px">
+            <h:commandButton value="Previous day" action="#{scheduleBoard.previousDay}" styleClass="btn btn--secondary btn--sm"/>
+            <h:commandButton value="Today" action="#{scheduleBoard.today}" styleClass="btn btn--secondary btn--sm"/>
+            <h:commandButton value="Next day" action="#{scheduleBoard.nextDay}" styleClass="btn btn--secondary btn--sm"/>
+          </div>
+        </h:form>
+      </div>
+    </div>
+
+    <!-- ============================ status counts ============================ -->
+    <div class="grid grid--4" style="margin-bottom:24px">
+      <ui:repeat value="#{scheduleBoard.statusCounts.entrySet().toArray()}" var="e">
+        <div class="stat">
+          <span class="stat__label">#{e.key}</span>
+          <span class="stat__value">#{e.value}</span>
+        </div>
+      </ui:repeat>
+    </div>
+
+    <!-- ============================== requests ============================== -->
+    <div class="card">
+      <div class="card__head"><h2>Appointment requests awaiting confirmation</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty scheduleBoard.requests}">
+            <clinic:emptyState title="No requests waiting"
+                               hint="New appointment requests will appear here."
+                               mark="📥"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">When</th>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Visit type</th>
+                    <th scope="col">Clinician</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{scheduleBoard.requests}" var="a">
+                    <tr>
+                      <td class="strong">
+                        <h:outputText value="#{a.startAt}">
+                          <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td>
+                        <h:outputText value="#{a.patient.fullName}"/>
+                        <div class="muted small"><h:outputText value="#{a.patient.mrn}"/></div>
+                      </td>
+                      <td><h:outputText value="#{a.appointmentType.name}"/></td>
+                      <td><h:outputText value="#{a.provider.displayName}"/></td>
+                      <td><clinic:statusBadge status="#{a.status}"/></td>
+                      <td class="actions">
+                        <h:form>
+                          <h:commandButton value="Confirm" styleClass="btn btn--success btn--sm">
+                            <f:actionListener binding="#{scheduleBoard.confirmRequest(a)}"/>
+                          </h:commandButton>
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <!-- ============================= day schedule ============================= -->
+    <div class="card">
+      <div class="card__head"><h2>Day schedule</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty scheduleBoard.appointments}">
+            <clinic:emptyState title="Nothing scheduled"
+                               hint="Appointments for this day will appear here."
+                               mark="📅"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Visit type</th>
+                    <th scope="col">Clinician</th>
+                    <th scope="col">Reason</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{scheduleBoard.appointments}" var="a">
+                    <tr>
+                      <td class="strong">
+                        <h:outputText value="#{a.startAt}">
+                          <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td>
+                        <h:outputText value="#{a.patient.fullName}"/>
+                        <div class="muted small"><h:outputText value="#{a.patient.mrn}"/></div>
+                      </td>
+                      <td><h:outputText value="#{a.appointmentType.name}"/></td>
+                      <td><h:outputText value="#{a.provider.displayName}"/></td>
+                      <td class="muted"><h:outputText value="#{a.reason}"/></td>
+                      <td><clinic:statusBadge status="#{a.status}"/></td>
+                      <td class="actions">
+                        <h:form>
+                          <h:commandButton value="Manage" styleClass="btn btn--secondary btn--sm">
+                            <f:actionListener binding="#{scheduleBoard.select(a)}"/>
+                          </h:commandButton>
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <!-- ========================== manage appointment ========================== -->
+    <c:if test="#{scheduleBoard.selected ne null}">
+      <div class="card">
+        <div class="card__head"><h2>Manage appointment</h2></div>
+        <div class="card__body">
+          <dl class="def">
+            <dt>Patient</dt>
+            <dd><h:outputText value="#{scheduleBoard.selected.patient.fullName}"/></dd>
+            <dt>When</dt>
+            <dd>
+              <h:outputText value="#{scheduleBoard.selected.startAt}">
+                <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+              </h:outputText>
+            </dd>
+            <dt>Visit type</dt>
+            <dd><h:outputText value="#{scheduleBoard.selected.appointmentType.name}"/></dd>
+            <dt>Clinician</dt>
+            <dd><h:outputText value="#{scheduleBoard.selected.provider.displayName}"/></dd>
+            <dt>Status</dt>
+            <dd><clinic:statusBadge status="#{scheduleBoard.selected.status}"/></dd>
+          </dl>
+
+          <h:form>
+            <div class="field field--wide mb-4">
+              <h:outputLabel for="actionNote" value="Action note"/>
+              <h:inputTextarea id="actionNote" value="#{scheduleBoard.actionNote}"/>
+              <h:message for="actionNote" styleClass="error-text"/>
+            </div>
+
+            <div class="workflow-bar">
+              <span class="workflow-bar__label">Change status</span>
+              <c:if test="#{scheduleBoard.canTransition(scheduleBoard.selected, 'checked_in')}">
+                <h:commandButton value="Check in" styleClass="btn btn--accent">
+                  <f:actionListener binding="#{scheduleBoard.transition(scheduleBoard.selected, 'checked_in')}"/>
+                </h:commandButton>
+              </c:if>
+              <c:if test="#{scheduleBoard.canTransition(scheduleBoard.selected, 'completed')}">
+                <h:commandButton value="Mark complete" styleClass="btn btn--success">
+                  <f:actionListener binding="#{scheduleBoard.transition(scheduleBoard.selected, 'completed')}"/>
+                </h:commandButton>
+              </c:if>
+              <c:if test="#{scheduleBoard.canTransition(scheduleBoard.selected, 'no_show')}">
+                <h:commandButton value="No show" styleClass="btn btn--secondary">
+                  <f:actionListener binding="#{scheduleBoard.transition(scheduleBoard.selected, 'no_show')}"/>
+                </h:commandButton>
+              </c:if>
+              <c:if test="#{scheduleBoard.canTransition(scheduleBoard.selected, 'cancelled')}">
+                <h:commandButton value="Cancel" styleClass="btn btn--danger">
+                  <f:actionListener binding="#{scheduleBoard.transition(scheduleBoard.selected, 'cancelled')}"/>
+                </h:commandButton>
+              </c:if>
+            </div>
+          </h:form>
+
+          <div class="divider"/>
+
+          <h:form>
+            <h3>Internal scheduling notes</h3>
+            <p class="hint">These notes are never visible to the patient.</p>
+            <div class="field field--wide mb-4">
+              <h:outputLabel for="staffNotes" value="Notes"/>
+              <h:inputTextarea id="staffNotes" value="#{scheduleBoard.selected.staffNotes}"/>
+              <h:message for="staffNotes" styleClass="error-text"/>
+            </div>
+            <h:commandButton value="Save notes" action="#{scheduleBoard.saveStaffNotes}" styleClass="btn btn--secondary"/>
+          </h:form>
+
+          <div class="divider"/>
+
+          <h3>Reschedule</h3>
+          <h:form>
+            <div class="form-grid form-grid--3 mb-4">
+              <div class="field">
+                <h:outputLabel for="rescheduleDate" value="New date"/>
+                <h:inputText id="rescheduleDate" value="#{scheduleBoard.rescheduleDate}">
+                  <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+                </h:inputText>
+                <h:message for="rescheduleDate" styleClass="error-text"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="rescheduleProvider" value="Provider"/>
+                <h:selectOneMenu id="rescheduleProvider" value="#{scheduleBoard.rescheduleProviderId}">
+                  <f:selectItems value="#{scheduleBoard.providers}" var="p"
+                                 itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+                </h:selectOneMenu>
+              </div>
+              <div class="field" style="align-self:end">
+                <h:commandButton value="Find slots" action="#{scheduleBoard.findRescheduleSlots}" styleClass="btn btn--secondary"/>
+              </div>
+            </div>
+
+            <c:if test="#{not empty scheduleBoard.rescheduleSlots}">
+              <div class="field field--wide mb-4">
+                <h:outputLabel value="Available slots"/>
+                <h:selectOneRadio value="#{scheduleBoard.rescheduleSlot}" layout="pageDirection">
+                  <f:selectItems value="#{scheduleBoard.rescheduleSlots}" var="s"
+                                 itemValue="#{s.isoStart}" itemLabel="#{s.label}"/>
+                </h:selectOneRadio>
+              </div>
+            </c:if>
+
+            <h:commandButton value="Reschedule" action="#{scheduleBoard.reschedule}" styleClass="btn btn--accent"/>
+          </h:form>
+        </div>
+      </div>
+    </c:if>
+
+    <!-- ========================== book for a patient ========================== -->
+    <div class="card">
+      <div class="card__head"><h2>Book for a patient</h2></div>
+      <div class="card__body">
+        <h:form>
+          <div class="filters mb-4">
+            <div class="field">
+              <h:outputLabel for="patientSearch" value="Patient name or MRN"/>
+              <h:inputText id="patientSearch" value="#{scheduleBoard.patientSearch}"/>
+            </div>
+            <div class="btn-row">
+              <h:commandButton value="Search" action="#{scheduleBoard.findPatients}" styleClass="btn btn--secondary"/>
+            </div>
+          </div>
+
+          <c:if test="#{not empty scheduleBoard.patientResults}">
+            <div class="field field--wide mb-4">
+              <h:outputLabel value="Patient"/>
+              <h:selectOneRadio value="#{scheduleBoard.bookPatientId}" layout="pageDirection">
+                <f:selectItems value="#{scheduleBoard.patientResults}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneRadio>
+            </div>
+          </c:if>
+
+          <div class="form-grid form-grid--3 mb-4">
+            <div class="field">
+              <h:outputLabel for="bookProvider" value="Provider"/>
+              <h:selectOneMenu id="bookProvider" value="#{scheduleBoard.bookProviderId}">
+                <f:selectItems value="#{scheduleBoard.providers}" var="p"
+                               itemValue="#{p.id}" itemLabel="#{p.displayName}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field">
+              <h:outputLabel for="bookType" value="Visit type"/>
+              <h:selectOneMenu id="bookType" value="#{scheduleBoard.bookTypeId}">
+                <f:selectItems value="#{scheduleBoard.types}" var="t"
+                               itemValue="#{t.id}" itemLabel="#{t.name}"/>
+              </h:selectOneMenu>
+            </div>
+            <div class="field" style="align-self:end">
+              <h:commandButton value="Find slots" action="#{scheduleBoard.findBookingSlots}" styleClass="btn btn--secondary"/>
+            </div>
+          </div>
+
+          <c:if test="#{not empty scheduleBoard.bookSlots}">
+            <div class="field field--wide mb-4">
+              <h:outputLabel value="Available slots"/>
+              <h:selectOneRadio value="#{scheduleBoard.bookSlot}" layout="pageDirection">
+                <f:selectItems value="#{scheduleBoard.bookSlots}" var="s"
+                               itemValue="#{s.isoStart}" itemLabel="#{s.label}"/>
+              </h:selectOneRadio>
+            </div>
+          </c:if>
+
+          <div class="field field--wide mb-4">
+            <h:outputLabel for="bookReason" value="Reason for visit"/>
+            <h:inputTextarea id="bookReason" value="#{scheduleBoard.bookReason}"/>
+          </div>
+
+          <h:commandButton value="Book appointment" action="#{scheduleBoard.bookForPatient}" styleClass="btn btn--primary"/>
+        </h:form>
+      </div>
+    </div>
+  </ui:define>
+</ui:composition>

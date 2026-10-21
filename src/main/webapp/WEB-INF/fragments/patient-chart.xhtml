@@ -1,0 +1,631 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic">
+
+  <c:if test="#{not patientChart.loaded}">
+    <div class="alert alert--warning" role="alert">
+      <span class="alert__icon" aria-hidden="true">!</span>
+      <span>The patient chart is unavailable.</span>
+    </div>
+  </c:if>
+
+  <c:if test="#{patientChart.loaded}">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>
+          <h:outputText value="#{patientChart.patient.fullName}"/>
+        </h1>
+        <p>
+          MRN <h:outputText value="#{patientChart.patient.mrn}"/> ·
+          <h:outputText value="#{patientChart.patient.age}"/> years old ·
+          Born <h:outputText value="#{patientChart.patient.dateOfBirth}">
+            <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+          </h:outputText> ·
+          <h:outputText value="#{patientChart.patient.phone}"/>
+        </p>
+      </div>
+      <div class="page-head__actions">
+        <h:outputLink value="#{patientChart.summaryExportUrl()}" styleClass="btn btn--secondary btn--sm">
+          Export visit summaries (JSON)
+        </h:outputLink>
+      </div>
+    </div>
+
+    <c:if test="#{not empty patientChart.patient.allergies}">
+      <div class="panel-note mb-4">
+        <strong>Allergies:</strong> <h:outputText value="#{patientChart.patient.allergies}"/>
+      </div>
+    </c:if>
+
+    <div class="tabs" data-tabs="true">
+      <button type="button" class="is-active" data-tab-target="tab-overview">Overview</button>
+      <button type="button" data-tab-target="tab-appointments">Appointments</button>
+      <button type="button" data-tab-target="tab-summaries">Visit summaries</button>
+      <button type="button" data-tab-target="tab-prescriptions">Prescriptions</button>
+      <button type="button" data-tab-target="tab-documents">Documents</button>
+      <button type="button" data-tab-target="tab-messages">Messages</button>
+      <button type="button" data-tab-target="tab-audit">Audit</button>
+    </div>
+
+    <!-- ================================ overview ================================ -->
+    <div id="tab-overview">
+      <div class="card">
+        <div class="card__head"><h2>Demographics</h2></div>
+        <div class="card__body">
+          <dl class="def">
+            <dt>Name</dt>
+            <dd><h:outputText value="#{patientChart.patient.fullName}"/></dd>
+            <dt>Gender</dt>
+            <dd><h:outputText value="#{patientChart.patient.gender}"/></dd>
+            <dt>Phone</dt>
+            <dd><h:outputText value="#{patientChart.patient.phone}"/></dd>
+            <dt>Email</dt>
+            <dd><h:outputText value="#{patientChart.patient.email}"/></dd>
+            <dt>Address</dt>
+            <dd>
+              <h:outputText value="#{patientChart.patient.addressLine1}"/>
+              <h:outputText value="#{patientChart.patient.addressLine2}" rendered="#{not empty patientChart.patient.addressLine2}"/>
+              <br/>
+              <h:outputText value="#{patientChart.patient.city}"/>,
+              <h:outputText value="#{patientChart.patient.stateRegion}"/>
+              <h:outputText value="#{patientChart.patient.postalCode}"/>
+            </dd>
+            <dt>Emergency contact</dt>
+            <dd>
+              <h:outputText value="#{patientChart.patient.emergencyContactName}"/> ·
+              <h:outputText value="#{patientChart.patient.emergencyContactPhone}"/> ·
+              <h:outputText value="#{patientChart.patient.emergencyContactRel}"/>
+            </dd>
+            <dt>Insurance</dt>
+            <dd>
+              <h:outputText value="#{patientChart.patient.insuranceProvider}"/> ·
+              Member <h:outputText value="#{patientChart.patient.insuranceMemberId}"/> ·
+              Group <h:outputText value="#{patientChart.patient.insuranceGroup}"/>
+            </dd>
+            <dt>Allergies</dt>
+            <dd><h:outputText value="#{patientChart.patient.allergies}"/></dd>
+          </dl>
+        </div>
+      </div>
+
+      <c:choose>
+        <c:when test="#{patientChart.canEditDemographics}">
+          <div class="card">
+            <div class="card__head"><h2>Edit demographics</h2></div>
+            <div class="card__body">
+              <h:form>
+                <div class="form-grid form-grid--3 mb-4">
+                  <div class="field">
+                    <h:outputLabel for="firstName" value="First name"/>
+                    <h:inputText id="firstName" value="#{patientChart.form.firstName}"/>
+                    <h:message for="firstName" styleClass="error-text"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="lastName" value="Last name"/>
+                    <h:inputText id="lastName" value="#{patientChart.form.lastName}"/>
+                    <h:message for="lastName" styleClass="error-text"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="dob" value="Date of birth"/>
+                    <h:inputText id="dob" value="#{patientChart.form.dateOfBirth}">
+                      <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+                    </h:inputText>
+                    <h:message for="dob" styleClass="error-text"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="gender" value="Gender"/>
+                    <h:inputText id="gender" value="#{patientChart.form.gender}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="phone" value="Phone"/>
+                    <h:inputText id="phone" value="#{patientChart.form.phone}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="email" value="Email"/>
+                    <h:inputText id="email" value="#{patientChart.form.email}"/>
+                    <h:message for="email" styleClass="error-text"/>
+                  </div>
+                  <div class="field field--wide">
+                    <h:outputLabel for="addr1" value="Address line 1"/>
+                    <h:inputText id="addr1" value="#{patientChart.form.addressLine1}"/>
+                  </div>
+                  <div class="field field--wide">
+                    <h:outputLabel for="addr2" value="Address line 2"/>
+                    <h:inputText id="addr2" value="#{patientChart.form.addressLine2}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="city" value="City"/>
+                    <h:inputText id="city" value="#{patientChart.form.city}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="state" value="State / region"/>
+                    <h:inputText id="state" value="#{patientChart.form.stateRegion}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="postal" value="Postal code"/>
+                    <h:inputText id="postal" value="#{patientChart.form.postalCode}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="ecName" value="Emergency contact name"/>
+                    <h:inputText id="ecName" value="#{patientChart.form.emergencyContactName}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="ecPhone" value="Emergency contact phone"/>
+                    <h:inputText id="ecPhone" value="#{patientChart.form.emergencyContactPhone}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="ecRel" value="Emergency contact relationship"/>
+                    <h:inputText id="ecRel" value="#{patientChart.form.emergencyContactRel}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="insProvider" value="Insurance provider"/>
+                    <h:inputText id="insProvider" value="#{patientChart.form.insuranceProvider}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="insMember" value="Insurance member ID"/>
+                    <h:inputText id="insMember" value="#{patientChart.form.insuranceMemberId}"/>
+                  </div>
+                  <div class="field">
+                    <h:outputLabel for="insGroup" value="Insurance group"/>
+                    <h:inputText id="insGroup" value="#{patientChart.form.insuranceGroup}"/>
+                  </div>
+                  <div class="field field--wide">
+                    <h:outputLabel for="allergies" value="Allergies"/>
+                    <h:inputTextarea id="allergies" value="#{patientChart.form.allergies}"/>
+                  </div>
+                  <div class="field field--wide">
+                    <h:outputLabel for="pcp" value="Primary provider"/>
+                    <h:selectOneMenu id="pcp" value="#{patientChart.formPrimaryProviderId}">
+                      <f:selectItem itemValue="#{null}" itemLabel="Unchanged"/>
+                      <f:selectItems value="#{patientChart.providerOptions}" var="po"
+                                     itemValue="#{po.id}" itemLabel="#{po.displayName}"/>
+                    </h:selectOneMenu>
+                  </div>
+                </div>
+                <h:commandButton value="Save" action="#{patientChart.saveDemographics}" styleClass="btn btn--primary"/>
+                <c:if test="#{patientChart.saveFailureDetail ne null}">
+                  <div class="alert alert--warning" role="alert" style="margin-top:12px">
+                    <span class="alert__icon" aria-hidden="true">!</span>
+                    <div class="code"><h:outputText value="#{patientChart.saveFailureDetail}"/></div>
+                  </div>
+                </c:if>
+              </h:form>
+            </div>
+          </div>
+        </c:when>
+        <c:otherwise>
+          <div class="panel-note">Demographics are maintained by the front desk.</div>
+        </c:otherwise>
+      </c:choose>
+    </div>
+
+    <!-- ============================== appointments ============================== -->
+    <div id="tab-appointments" hidden="hidden">
+      <div class="card">
+        <div class="card__head"><h2>Appointments</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty patientChart.appointments}">
+              <clinic:emptyState title="No appointments" hint="Appointments for this patient will appear here." mark="📅"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">When</th>
+                      <th scope="col">Visit type</th>
+                      <th scope="col">Clinician</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Reason</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{patientChart.appointments}" var="a">
+                      <tr>
+                        <td class="strong">
+                          <h:outputText value="#{a.startAt}">
+                            <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                        <td><h:outputText value="#{a.appointmentType.name}"/></td>
+                        <td><h:outputText value="#{a.provider.displayName}"/></td>
+                        <td><clinic:statusBadge status="#{a.status}"/></td>
+                        <td class="muted"><h:outputText value="#{a.reason}"/></td>
+                        <td class="actions">
+                          <ui:fragment rendered="#{patientChart.canWriteSummary(a)}">
+                            <h:form>
+                              <h:commandButton value="Write visit summary" styleClass="btn btn--accent btn--sm">
+                                <f:actionListener binding="#{patientChart.createDraft(a)}"/>
+                              </h:commandButton>
+                            </h:form>
+                          </ui:fragment>
+                        </td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================ summaries ================================ -->
+    <div id="tab-summaries" hidden="hidden">
+      <c:if test="#{not empty patientChart.summaries}">
+        <div class="card">
+          <div class="card__head"><h2>Visit summaries</h2></div>
+          <div class="card__body card__body--flush">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Visit date</th>
+                    <th scope="col">Clinician</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Chief complaint</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientChart.summaries}" var="v">
+                    <tr>
+                      <td class="strong">
+                        <h:outputText value="#{v.visitDate}">
+                          <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                      </td>
+                      <td><h:outputText value="#{v.provider.displayName}"/></td>
+                      <td><clinic:statusBadge status="#{v.status}"/></td>
+                      <td class="muted"><h:outputText value="#{v.chiefComplaint}"/></td>
+                      <td class="actions">
+                        <ui:fragment rendered="#{patientChart.canAuthorClinical}">
+                          <h:link outcome="/clinician/visit-summary">
+                            <f:param name="id" value="#{v.id}"/>
+                            Open
+                          </h:link>
+                        </ui:fragment>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card__foot">
+            <div class="panel-note">Draft summaries are not visible to the patient until released.</div>
+          </div>
+        </div>
+      </c:if>
+    </div>
+
+    <!-- =============================== prescriptions =============================== -->
+    <div id="tab-prescriptions" hidden="hidden">
+      <div class="card">
+        <div class="card__head"><h2>Prescriptions</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty patientChart.prescriptions}">
+              <clinic:emptyState title="No prescriptions" hint="Prescriptions issued to this patient will appear here." mark="💊"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">Medication</th>
+                      <th scope="col">Dosage</th>
+                      <th scope="col">Instructions</th>
+                      <th scope="col">Refills remaining</th>
+                      <th scope="col">Issued</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{patientChart.prescriptions}" var="rx">
+                      <tr>
+                        <td class="strong"><h:outputText value="#{rx.medicationName}"/></td>
+                        <td><h:outputText value="#{rx.dosage}"/></td>
+                        <td class="muted"><h:outputText value="#{rx.instructions}"/></td>
+                        <td><h:outputText value="#{rx.refillsRemaining}"/></td>
+                        <td>
+                          <h:outputText value="#{rx.issuedAt}">
+                            <f:convertDateTime type="localDate" pattern="d MMM yyyy"/>
+                          </h:outputText>
+                        </td>
+                        <td><clinic:statusBadge status="#{rx.status}"/></td>
+                        <td class="actions">
+                          <ui:fragment rendered="#{patientChart.canAuthorClinical}">
+                            <h:form>
+                              <h:commandButton value="Discontinue" styleClass="btn btn--danger btn--sm">
+                                <f:actionListener binding="#{patientChart.discontinue(rx)}"/>
+                              </h:commandButton>
+                            </h:form>
+                          </ui:fragment>
+                        </td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+
+      <c:if test="#{patientChart.canAuthorClinical}">
+        <div class="card">
+          <div class="card__head"><h2>Issue a prescription</h2></div>
+          <div class="card__body">
+            <h:form>
+              <div class="form-grid form-grid--3 mb-4">
+                <div class="field">
+                  <h:outputLabel for="medName" value="Medication"/>
+                  <h:inputText id="medName" value="#{patientChart.medicationName}"/>
+                  <h:message for="medName" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="dosage" value="Dosage"/>
+                  <h:inputText id="dosage" value="#{patientChart.dosage}"/>
+                  <h:message for="dosage" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="quantity" value="Quantity"/>
+                  <h:inputText id="quantity" value="#{patientChart.quantity}"/>
+                  <h:message for="quantity" styleClass="error-text"/>
+                </div>
+                <div class="field field--wide">
+                  <h:outputLabel for="instructions" value="Instructions"/>
+                  <h:inputTextarea id="instructions" value="#{patientChart.instructions}"/>
+                  <h:message for="instructions" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="refillsAllowed" value="Refills allowed"/>
+                  <h:inputText id="refillsAllowed" value="#{patientChart.refillsAllowed}"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="expiresAt" value="Expires"/>
+                  <h:inputText id="expiresAt" value="#{patientChart.expiresAt}">
+                    <f:convertDateTime type="localDate" pattern="yyyy-MM-dd"/>
+                  </h:inputText>
+                  <h:message for="expiresAt" styleClass="error-text"/>
+                </div>
+              </div>
+              <h:commandButton value="Issue prescription" action="#{patientChart.createPrescription}" styleClass="btn btn--primary"/>
+            </h:form>
+          </div>
+        </div>
+      </c:if>
+
+      <c:if test="#{not empty patientChart.refills}">
+        <div class="card">
+          <div class="card__head"><h3>Refill requests</h3></div>
+          <div class="card__body card__body--flush">
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Medication</th>
+                    <th scope="col">Requested</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientChart.refills}" var="r">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{r.prescription.medicationName}"/></td>
+                      <td>
+                        <h:outputText value="#{r.requestedAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                      </td>
+                      <td><clinic:statusBadge status="#{r.status}"/></td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </c:if>
+    </div>
+
+    <!-- ================================ documents ================================ -->
+    <div id="tab-documents" hidden="hidden">
+      <div class="card">
+        <div class="card__head"><h2>Documents</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty patientChart.documents}">
+              <clinic:emptyState title="No documents" hint="Documents uploaded to this chart will appear here." mark="📄"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">Title</th>
+                      <th scope="col">Category</th>
+                      <th scope="col">Uploaded</th>
+                      <th scope="col">Size</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Review note</th>
+                      <th scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{patientChart.documents}" var="d">
+                      <tr>
+                        <td class="strong">
+                          <h:outputText value="#{d.title}"/>
+                          <ui:fragment rendered="#{d.internalOnly}">
+                            <span class="tag tag--internal">Internal</span>
+                          </ui:fragment>
+                        </td>
+                        <td><h:outputText value="#{d.category.label}"/></td>
+                        <td>
+                          <h:outputText value="#{d.createdAt}">
+                            <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                          </h:outputText>
+                        </td>
+                        <td><h:outputText value="#{d.humanSize}"/></td>
+                        <td><clinic:statusBadge status="#{d.status}"/></td>
+                        <td class="muted"><h:outputText value="#{d.reviewNote}"/></td>
+                        <td class="actions">
+                          <h:outputLink value="#{patientChart.downloadUrl(d)}" styleClass="btn btn--secondary btn--sm">
+                            Download
+                          </h:outputLink>
+                          <h:form>
+                            <h:commandButton value="Verify" styleClass="btn btn--success btn--sm">
+                              <f:actionListener binding="#{patientChart.verifyDocument(d)}"/>
+                            </h:commandButton>
+                            <h:commandButton value="Archive" styleClass="btn btn--secondary btn--sm">
+                              <f:actionListener binding="#{patientChart.archiveDocument(d)}"/>
+                            </h:commandButton>
+                          </h:form>
+                        </td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__head"><h3>Add to chart</h3></div>
+        <div class="card__body">
+          <h:form enctype="multipart/form-data">
+            <div class="form-grid form-grid--3 mb-4">
+              <div class="field">
+                <h:outputLabel for="uploadFile" value="File"/>
+                <h:inputFile id="uploadFile" value="#{patientChart.upload}"/>
+                <h:message for="uploadFile" styleClass="error-text"/>
+              </div>
+              <div class="field">
+                <h:outputLabel for="uploadCategory" value="Category"/>
+                <h:selectOneMenu id="uploadCategory" value="#{patientChart.uploadCategory}">
+                  <f:selectItems value="#{patientChart.uploadCategories}" var="c"
+                                 itemValue="#{c.code}" itemLabel="#{c.label}"/>
+                </h:selectOneMenu>
+              </div>
+              <div class="field">
+                <h:outputLabel for="uploadTitle" value="Title"/>
+                <h:inputText id="uploadTitle" value="#{patientChart.uploadTitle}"/>
+                <h:message for="uploadTitle" styleClass="error-text"/>
+              </div>
+            </div>
+            <h:commandButton value="Add to chart" action="#{patientChart.uploadDocument}" styleClass="btn btn--primary"/>
+          </h:form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================= messages ================================= -->
+    <div id="tab-messages" hidden="hidden">
+      <div class="card">
+        <div class="card__head"><h2>Messages</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty patientChart.threads}">
+              <clinic:emptyState title="No conversations" hint="Conversations with this patient will appear here." mark="💬"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">Subject</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Last message</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{patientChart.threads}" var="t">
+                      <tr>
+                        <td class="strong">
+                          <h:link outcome="/staff/messages">
+                            <f:param name="threadId" value="#{t.id}"/>
+                            <h:outputText value="#{t.subject}"/>
+                          </h:link>
+                        </td>
+                        <td><clinic:statusBadge status="#{t.status}"/></td>
+                        <td>
+                          <h:outputText value="#{t.lastMessageAt}">
+                            <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================== audit ================================== -->
+    <div id="tab-audit" hidden="hidden">
+      <div class="card">
+        <div class="card__head"><h2>Access history</h2></div>
+        <div class="card__body card__body--flush">
+          <c:choose>
+            <c:when test="#{empty patientChart.accessHistory}">
+              <clinic:emptyState title="No access history" hint="Access to this chart will be logged here." mark="🛡"/>
+            </c:when>
+            <c:otherwise>
+              <div class="table-wrap">
+                <table class="data">
+                  <thead>
+                    <tr>
+                      <th scope="col">When</th>
+                      <th scope="col">Actor</th>
+                      <th scope="col">Role</th>
+                      <th scope="col">Action</th>
+                      <th scope="col">Entity type</th>
+                      <th scope="col">Basis</th>
+                      <th scope="col">Detail</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <ui:repeat value="#{patientChart.accessHistory}" var="e">
+                      <tr>
+                        <td class="strong">
+                          <h:outputText value="#{e.occurredAt}">
+                            <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+                          </h:outputText>
+                        </td>
+                        <td><h:outputText value="#{e.actorEmail}"/></td>
+                        <td><h:outputText value="#{e.actorRole}"/></td>
+                        <td><h:outputText value="#{e.action}"/></td>
+                        <td><h:outputText value="#{e.entityType}"/></td>
+                        <td class="muted"><h:outputText value="#{e.authBasis}"/></td>
+                        <td class="muted"><h:outputText value="#{e.detail}"/></td>
+                      </tr>
+                    </ui:repeat>
+                  </tbody>
+                </table>
+              </div>
+            </c:otherwise>
+          </c:choose>
+        </div>
+        <div class="card__foot">
+          <div class="panel-note">The audit trail is append-only and cannot be edited or deleted by any role.</div>
+        </div>
+      </div>
+    </div>
+  </c:if>
+</ui:composition>

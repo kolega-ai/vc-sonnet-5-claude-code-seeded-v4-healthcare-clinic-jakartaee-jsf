@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">My documents</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>My documents</h1>
+        <p>Upload forms the clinic has asked for, and track what has been reviewed.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>Upload a form or document</h2></div>
+      <div class="card__body">
+        <h:form id="uploadForm" enctype="multipart/form-data">
+          <div class="form-grid form-grid--2">
+            <div class="field">
+              <h:outputLabel for="category" value="Category"/>
+              <h:selectOneMenu id="category" value="#{patientDocuments.category}">
+                <f:selectItems value="#{patientDocuments.categories}" var="c"
+                               itemValue="#{c.code}" itemLabel="#{c.label}"/>
+              </h:selectOneMenu>
+              <h:message for="category" styleClass="error-text"/>
+            </div>
+            <div class="field">
+              <h:outputLabel for="title" value="Title"/>
+              <h:inputText id="title" value="#{patientDocuments.title}" required="true"
+                            requiredMessage="Give the document a short title."/>
+              <h:message for="title" styleClass="error-text"/>
+            </div>
+            <div class="field field--wide">
+              <h:outputLabel for="upload" value="File"/>
+              <h:inputFile id="upload" value="#{patientDocuments.upload}"/>
+              <span class="hint">
+                Accepted types: PDF, PNG, JPG, WEBP, TXT, CSV. Maximum size 10 MB.
+              </span>
+              <h:message for="upload" styleClass="error-text"/>
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:16px">
+            <h:commandButton value="Upload" action="#{patientDocuments.submit}"
+                              styleClass="btn btn--primary"/>
+          </div>
+        </h:form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head"><h2>My documents</h2></div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{empty patientDocuments.documents}">
+            <clinic:emptyState title="Nothing uploaded yet"
+                                hint="Documents you upload will appear here once submitted."
+                                mark="📄"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Uploaded</th>
+                    <th scope="col">Size</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Review note</th>
+                    <th scope="col">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{patientDocuments.documents}" var="d">
+                    <tr>
+                      <td class="strong"><h:outputText value="#{d.title}"/></td>
+                      <td><h:outputText value="#{d.category.label}"/></td>
+                      <td>
+                        <h:outputText value="#{d.createdAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                      </td>
+                      <td><h:outputText value="#{d.humanSize}"/></td>
+                      <td><clinic:statusBadge status="#{d.status}"/></td>
+                      <td class="muted"><h:outputText value="#{d.reviewNote}"/></td>
+                      <td class="actions">
+                        <h:outputLink value="#{patientDocuments.downloadUrl(d)}"
+                                       styleClass="btn btn--secondary btn--sm">
+                          Download
+                        </h:outputLink>
+                      </td>
+                    </tr>
+                    <ui:fragment rendered="#{d.status.code eq 'rejected'}">
+                      <tr>
+                        <td colspan="7">
+                          <div class="alert alert--danger" role="alert">
+                            <span class="alert__icon" aria-hidden="true">!</span>
+                            <span>
+                              This document was rejected.
+                              <h:outputText value="#{d.reviewNote}"/>
+                              Please review and upload a corrected version.
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+                    </ui:fragment>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+  </ui:define>
+</ui:composition>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Form review</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Form review</h1>
+        <p>Verify, reject or archive forms uploaded by patients.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card__head">
+        <h2>Awaiting review</h2>
+        <c:if test="#{not documentReview.emptyQueue}">
+          <h:form>
+            <h:commandButton value="Verify all" action="#{documentReview.verifyAll}"
+                             styleClass="btn btn--secondary btn--sm"/>
+          </h:form>
+        </c:if>
+      </div>
+      <div class="card__body card__body--flush">
+        <c:choose>
+          <c:when test="#{documentReview.emptyQueue}">
+            <clinic:emptyState title="Nothing to review"
+                               hint="Uploaded forms will appear here for verification."
+                               mark="📄"/>
+          </c:when>
+          <c:otherwise>
+            <div class="table-wrap">
+              <table class="data">
+                <thead>
+                  <tr>
+                    <th scope="col">Patient</th>
+                    <th scope="col">Title</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Uploaded</th>
+                    <th scope="col">Size</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <ui:repeat value="#{documentReview.queue}" var="d">
+                    <tr>
+                      <td>
+                        <h:outputText value="#{d.patient.fullName}"/>
+                        <div class="muted small"><h:outputText value="#{d.patient.mrn}"/></div>
+                      </td>
+                      <td class="strong"><h:outputText value="#{d.title}"/></td>
+                      <td><h:outputText value="#{d.category.label}"/></td>
+                      <td>
+                        <h:outputText value="#{d.createdAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy"/>
+                        </h:outputText>
+                      </td>
+                      <td><h:outputText value="#{d.humanSize}"/></td>
+                      <td class="actions">
+                        <h:outputLink value="#{documentReview.downloadUrl(d)}" styleClass="btn btn--secondary btn--sm">
+                          Download
+                        </h:outputLink>
+                        <h:outputLink value="#{documentReview.renderUrl(d)}" styleClass="btn btn--secondary btn--sm">
+                          Render
+                        </h:outputLink>
+                        <h:outputLink value="#{documentReview.previewUrl(d)}" styleClass="btn btn--secondary btn--sm">
+                          Preview
+                        </h:outputLink>
+                        <h:form>
+                          <h:commandButton value="Review" styleClass="btn btn--secondary btn--sm">
+                            <f:actionListener binding="#{documentReview.select(d)}"/>
+                          </h:commandButton>
+                        </h:form>
+                      </td>
+                    </tr>
+                  </ui:repeat>
+                </tbody>
+              </table>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+    </div>
+
+    <c:if test="#{documentReview.selected ne null}">
+      <div class="card">
+        <div class="card__head"><h2>Review document</h2></div>
+        <div class="card__body">
+          <dl class="def">
+            <dt>Patient</dt>
+            <dd><h:outputText value="#{documentReview.selected.patient.fullName}"/></dd>
+            <dt>Title</dt>
+            <dd><h:outputText value="#{documentReview.selected.title}"/></dd>
+            <dt>Category</dt>
+            <dd><h:outputText value="#{documentReview.selected.category.label}"/></dd>
+            <dt>Uploaded</dt>
+            <dd>
+              <h:outputText value="#{documentReview.selected.createdAt}">
+                <f:convertDateTime type="localDateTime" pattern="EEE d MMM yyyy, HH:mm"/>
+              </h:outputText>
+            </dd>
+            <dt>Size</dt>
+            <dd><h:outputText value="#{documentReview.selected.humanSize}"/></dd>
+          </dl>
+
+          <h:form>
+            <div class="field field--wide mb-4">
+              <h:outputLabel for="reviewNote" value="Review note"/>
+              <h:inputTextarea id="reviewNote" value="#{documentReview.reviewNote}"/>
+              <span class="hint">A reason is required to reject.</span>
+              <h:message for="reviewNote" styleClass="error-text"/>
+            </div>
+
+            <div class="workflow-bar">
+              <span class="workflow-bar__label">Decision</span>
+              <h:commandButton value="Verify" action="#{documentReview.verify}" styleClass="btn btn--success"/>
+              <h:commandButton value="Reject" action="#{documentReview.reject}" styleClass="btn btn--danger"/>
+              <h:commandButton value="Archive" action="#{documentReview.archive}" styleClass="btn btn--secondary"/>
+            </div>
+          </h:form>
+        </div>
+      </div>
+    </c:if>
+  </ui:define>
+</ui:composition>

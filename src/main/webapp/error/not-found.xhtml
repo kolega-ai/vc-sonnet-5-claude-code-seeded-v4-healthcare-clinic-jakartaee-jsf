@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:ui="jakarta.faces.facelets"
+                template="/WEB-INF/templates/public.xhtml">
+
+  <ui:define name="title">Page not found</ui:define>
+
+  <ui:define name="content">
+    <span class="badge badge--neutral">404</span>
+    <h2 style="margin-top:12px">We could not find that page</h2>
+    <p class="muted">The link may be out of date, or the record may have been removed.</p>
+    <h:link outcome="/index" value="Back to the portal" styleClass="btn btn--primary btn--block"/>
+  </ui:define>
+</ui:composition>

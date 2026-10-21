@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:ui="jakarta.faces.facelets"
+                template="/WEB-INF/templates/public.xhtml">
+
+  <ui:define name="title">Something went wrong</ui:define>
+
+  <ui:define name="content">
+    <span class="badge badge--warning">Error</span>
+    <h2 style="margin-top:12px">Something went wrong</h2>
+    <p class="muted">The request could not be completed. The problem has been logged. Please
+       try again, and contact the clinic if it keeps happening.</p>
+    <h:link outcome="/index" value="Back to the portal" styleClass="btn btn--primary btn--block"/>
+  </ui:define>
+</ui:composition>

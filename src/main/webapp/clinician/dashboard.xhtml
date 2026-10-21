@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">My clinic day</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>My clinic day</h1>
+        <p>Your panel, your schedule and what needs a clinical decision today.</p>
+      </div>
+    </div>
+
+    <div class="grid grid--2" style="margin-bottom:24px">
+      <div class="stat stat--brand">
+        <span class="stat__label">Patients on my panel</span>
+        <span class="stat__value">#{staffDashboard.panelSize}</span>
+        <span class="stat__hint">Assigned to me as primary provider</span>
+      </div>
+      <div class="stat #{staffDashboard.openRefills gt 0 ? 'stat--warning' : ''}">
+        <span class="stat__label">Refills awaiting my decision</span>
+        <span class="stat__value">#{staffDashboard.openRefills}</span>
+        <span class="stat__hint">Approve, deny or ask for more information</span>
+      </div>
+    </div>
+
+    <ui:include src="/WEB-INF/fragments/staff-dashboard.xhtml"/>
+  </ui:define>
+</ui:composition>

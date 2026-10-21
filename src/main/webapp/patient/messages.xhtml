@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:h="jakarta.faces.html"
+                xmlns:f="jakarta.faces.core"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:c="jakarta.tags.core"
+                xmlns:clinic="jakarta.faces.composite/clinic"
+                template="/WEB-INF/templates/layout.xhtml">
+
+  <ui:define name="title">Messages</ui:define>
+
+  <ui:define name="content">
+
+    <div class="page-head">
+      <div class="page-head__text">
+        <h1>Messages</h1>
+        <p>Secure conversations between you and your care team.</p>
+      </div>
+    </div>
+
+    <div class="grid grid--split">
+
+      <div>
+        <div class="card">
+          <div class="card__head"><h2>Conversations</h2></div>
+          <div class="card__body card__body--flush">
+            <c:choose>
+              <c:when test="#{empty messaging.threads}">
+                <clinic:emptyState title="No conversations yet"
+                                    hint="Start a new conversation below."
+                                    mark="💬"/>
+              </c:when>
+              <c:otherwise>
+                <ul class="thread-list">
+                  <ui:repeat value="#{messaging.threads}" var="t">
+                    <li class="#{messaging.selected ne null and messaging.selected.id eq t.id ? 'is-active' : ''}">
+                      <h:form>
+                        <h:commandLink action="#{messaging.openThread(t.id)}">
+                          <strong><h:outputText value="#{t.subject}"/></strong>
+                          <span>
+                            <h:outputText value="#{t.patient.fullName}"/> ·
+                            <h:outputText value="#{t.lastMessageAt}">
+                              <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                            </h:outputText>
+                          </span>
+                          <clinic:statusBadge status="#{t.status}"/>
+                        </h:commandLink>
+                      </h:form>
+                    </li>
+                  </ui:repeat>
+                </ul>
+              </c:otherwise>
+            </c:choose>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><h3>Start a new conversation</h3></div>
+          <div class="card__body">
+            <h:form id="newThreadForm">
+              <div class="form-grid">
+                <div class="field">
+                  <h:outputLabel for="subject" value="Subject"/>
+                  <h:inputText id="subject" value="#{messaging.newSubject}" required="true"
+                                requiredMessage="Give your message a subject."/>
+                  <h:message for="subject" styleClass="error-text"/>
+                </div>
+                <div class="field">
+                  <h:outputLabel for="category" value="Category"/>
+                  <h:selectOneMenu id="category" value="#{messaging.newCategory}">
+                    <f:selectItems value="#{messaging.categories}" var="cat"/>
+                  </h:selectOneMenu>
+                  <h:message for="category" styleClass="error-text"/>
+                </div>
+                <div class="field field--wide">
+                  <h:outputLabel for="body" value="Message"/>
+                  <h:inputTextarea id="body" value="#{messaging.newBody}" required="true"
+                                    requiredMessage="Write your message."/>
+                  <h:message for="body" styleClass="error-text"/>
+                </div>
+              </div>
+              <div class="btn-row" style="margin-top:16px">
+                <h:commandButton value="Send" action="#{messaging.startThread}"
+                                  styleClass="btn btn--primary"/>
+              </div>
+            </h:form>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <c:choose>
+          <c:when test="#{messaging.selected eq null}">
+            <div class="card">
+              <div class="card__body">
+                <clinic:emptyState title="No conversation selected"
+                                    hint="Choose a conversation on the left, or start a new one."
+                                    mark="💬"/>
+              </div>
+            </div>
+          </c:when>
+          <c:otherwise>
+            <div class="card">
+              <div class="card__head">
+                <h2><h:outputText value="#{messaging.selected.subject}"/></h2>
+                <div class="card__actions">
+                  <clinic:statusBadge status="#{messaging.selected.status}"/>
+                </div>
+              </div>
+              <div class="card__body">
+                <div class="thread">
+                  <ui:repeat value="#{messaging.messages}" var="m">
+                    <div class="bubble
+                                #{messaging.isFromMe(m) ? 'bubble--mine' : ''}
+                                #{m.internalOnly ? 'bubble--internal' : ''}">
+                      <div class="bubble__meta">
+                        <h:outputText value="#{m.sender.fullName}"/> ·
+                        <h:outputText value="#{m.createdAt}">
+                          <f:convertDateTime type="localDateTime" pattern="d MMM yyyy, HH:mm"/>
+                        </h:outputText>
+                        <ui:fragment rendered="#{m.internalOnly}">
+                          <span class="tag tag--internal">Internal note — not visible to the patient</span>
+                        </ui:fragment>
+                      </div>
+                      <div class="bubble__body"><h:outputText value="#{m.body}"/></div>
+                    </div>
+                  </ui:repeat>
+                </div>
+
+                <div class="divider"/>
+
+                <h:form id="replyForm">
+                  <div class="field field--wide">
+                    <h:outputLabel for="replyBody" value="Reply"/>
+                    <h:inputTextarea id="replyBody" value="#{messaging.replyBody}" required="true"
+                                      requiredMessage="Write a reply before sending."/>
+                    <h:message for="replyBody" styleClass="error-text"/>
+                  </div>
+
+                  <c:if test="#{messaging.staff}">
+                    <div class="check" style="margin-top:8px">
+                      <h:selectBooleanCheckbox id="replyInternal" value="#{messaging.replyInternal}"/>
+                      <h:outputLabel for="replyInternal" value="Internal note (staff only, not visible to patient)"/>
+                    </div>
+                  </c:if>
+
+                  <div class="btn-row" style="margin-top:12px">
+                    <h:commandButton value="Send reply" action="#{messaging.reply}"
+                                      styleClass="btn btn--primary"/>
+                  </div>
+
+                  <c:if test="#{messaging.staff}">
+                    <div class="workflow-bar" style="margin-top:16px">
+                      <span class="workflow-bar__label">Conversation status</span>
+                      <h:commandButton value="Mark resolved" styleClass="btn btn--success btn--sm"
+                                        action="#{messaging.changeStatus('resolved')}"/>
+                      <h:commandButton value="Awaiting patient" styleClass="btn btn--secondary btn--sm"
+                                        action="#{messaging.changeStatus('awaiting_patient')}"/>
+                      <h:commandButton value="Close conversation" styleClass="btn btn--danger btn--sm"
+                                        action="#{messaging.changeStatus('closed')}"/>
+                    </div>
+                  </c:if>
+                </h:form>
+              </div>
+            </div>
+          </c:otherwise>
+        </c:choose>
+      </div>
+
+    </div>
+
+  </ui:define>
+</ui:composition>

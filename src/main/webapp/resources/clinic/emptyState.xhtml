@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui:composition xmlns="http://www.w3.org/1999/xhtml"
+                xmlns:ui="jakarta.faces.facelets"
+                xmlns:cc="jakarta.faces.composite"
+                xmlns:h="jakarta.faces.html">
+
+  <cc:interface>
+    <cc:attribute name="title" required="true"/>
+    <cc:attribute name="hint" required="false"/>
+    <cc:attribute name="mark" required="false" default="○"/>
+  </cc:interface>
+
+  <cc:implementation>
+    <div class="empty">
+      <div class="empty__mark" aria-hidden="true">#{cc.attrs.mark}</div>
+      <div class="empty__title"><h:outputText value="#{cc.attrs.title}"/></div>
+      <div class="small"><h:outputText value="#{cc.attrs.hint}"/></div>
+      <cc:insertChildren/>
+    </div>
+  </cc:implementation>
+</ui:composition>
